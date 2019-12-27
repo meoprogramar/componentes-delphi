@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2019/10/11 18:09:20.000.120,=rtl.dcp</Transaction>
+    <Transaction>2019/12/09 16:18:17.000.530,=rtl.dcp</Transaction>
+    <Transaction>2019/12/09 20:20:12.000.893,=rtl.dcp</Transaction>
+    <Transaction>2019/12/09 20:20:41.000.603,C:\Users\Estêvão\Documents\Embarcadero\Studio\Projects\Package1.dproj=D:\Windows\Documentos\DelphiProjects\vuetify-style\AppleStyle.dproj</Transaction>
+    <Transaction>2019/12/09 20:23:10.000.695,=fmx.dcp</Transaction>
+    <Transaction>2019/12/09 20:23:10.000.689,=D:\Windows\Documentos\DelphiProjects\vuetify-style\teste.pas</Transaction>
+    <Transaction>2019/12/09 23:08:24.000.136,=D:\Windows\Documentos\DelphiProjects\vuetify-style\TEditPersonalizado.pas</Transaction>
+    <Transaction>2019/12/09 23:10:06.000.315,D:\Windows\Documentos\DelphiProjects\vuetify-style\TEditPersonalizado.pas=</Transaction>
+    <Transaction>2019/12/09 23:13:06.000.935,=D:\Windows\Documentos\DelphiProjects\vuetify-style\Rectangle1sadadsdasdasdas.pas</Transaction>
+    <Transaction>2019/12/10 23:18:00.000.607,=D:\Windows\Documentos\DelphiProjects\componentes-personalizados\Control1.pas</Transaction>
+    <Transaction>2019/12/13 15:30:06.000.324,=D:\Windows\Documentos\DelphiProjects\componentes-personalizados\buttonfinal1kkkk.pas</Transaction>
+    <Transaction>2019/12/13 15:53:32.000.196,D:\Windows\Documentos\DelphiProjects\componentes-personalizados\teste.pas=</Transaction>
+    <Transaction>2019/12/13 15:53:32.000.188,D:\Windows\Documentos\DelphiProjects\componentes-personalizados\buttonfinal1kkkk.pas=</Transaction>
+    <Transaction>2019/12/13 15:53:32.000.195,D:\Windows\Documentos\DelphiProjects\componentes-personalizados\Rectangle1sadadsdasdasdas.pas=</Transaction>
+    <Transaction>2019/12/13 15:55:14.000.245,=D:\Windows\Documentos\DelphiProjects\componentes-personalizados\FlatEdit.pas</Transaction>
+    <Transaction>2019/12/13 18:00:35.000.149,=D:\Windows\Documentos\DelphiProjects\componentes-personalizados\Editteste.pas</Transaction>
+    <Transaction>2019/12/13 20:22:58.000.036,=D:\Windows\Documentos\DelphiProjects\componentes-personalizados\EditTesteVamosVer.pas</Transaction>
+    <Transaction>2019/12/27 15:09:29.000.370,D:\Windows\Documentos\DelphiProjects\TESTE\FlatEdit.pas=</Transaction>
+    <Transaction>2019/12/27 15:09:29.000.357,D:\Windows\Documentos\DelphiProjects\TESTE\EditTesteVamosVer.pas=</Transaction>
+    <Transaction>2019/12/27 15:09:29.000.322,D:\Windows\Documentos\DelphiProjects\TESTE\Editteste.pas=</Transaction>
+  </Transactions>
+</BorlandProject>
