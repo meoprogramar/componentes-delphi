@@ -1,0 +1,367 @@
+unit SwitchField;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, FMX.StdCtrls, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, ColorClass;
+
+type
+  TSwitchField = class(TControl)
+  private
+    { Private declarations }
+    procedure Enable();
+    procedure Disable();
+    function GetColorRoundRectangle(SolidColor: TAlphaColor): TAlphaColor;
+    procedure ApplyColorChanges();
+  protected
+    { Protected declarations }
+    FText: TLabel;
+    FLayoutIcon: TLayout;
+    FCircleMain: TCircle;
+    FCircleMainEffect: TCircle;
+    FRoundRectangle: TRoundRect;
+    FShadowCircleMain: TShadowEffect;
+
+    { Block focus on background }
+    FButtonLockFocus: TButton;
+
+    FColorMain: TAlphaColor;
+
+    procedure OnSwitchFieldClick(Sender: TObject);
+    procedure OnSwitchFieldMouseEnter(Sender: TObject);
+    procedure OnSwitchFieldMouseExit(Sender: TObject);
+
+    function GetFCheckedIconColor: TAlphaColor;
+    procedure SetFCheckedIconColor(const Value: TAlphaColor);
+    function GetFButtonClass: TColorClass;
+    function GetFIsChecked: Boolean;
+    function GetFTag: NativeInt;
+    function GetFText: String;
+    function GetFTextSettings: TTextSettings;
+    procedure SetFButtonClass(const Value: TColorClass);
+    procedure SetFIsChecked(const Value: Boolean);
+    procedure SetFTag(const Value: NativeInt);
+    procedure SetFText(const Value: String);
+    procedure SetFTextSettings(const Value: TTextSettings);
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    { Published declarations }
+    property Cursor;
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+    property HitTest;
+
+    { Additional properties }
+    property ButtonClass: TColorClass read GetFButtonClass write SetFButtonClass;
+    property CheckedIconColor: TAlphaColor read GetFCheckedIconColor write SetFCheckedIconColor;
+    property Text: String read GetFText write SetFText;
+    property TextSettings: TTextSettings read GetFTextSettings write SetFTextSettings;
+    property IsChecked: Boolean read GetFIsChecked write SetFIsChecked;
+    property Tag: NativeInt read GetFTag write SetFTag;
+
+    { Events }
+    property OnPainting;
+    property OnPaint;
+    property OnResize;
+
+    { Mouse events }
+    // property OnChange: TNotifyEvent read GetFOnChange write SetFOnChange;
+    // property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
+    property OnDblClick;
+    property OnKeyDown;
+    property OnKeyUp;
+    property OnMouseDown;
+    property OnMouseUp;
+    property OnMouseWheel;
+    property OnMouseMove;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnEnter;
+    property OnExit;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TSwitchField]);
+end;
+
+{ TSwitchField }
+
+constructor TSwitchField.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.Width := 250;
+  Self.Height := 30;
+  Self.Cursor := crHandPoint;
+  Self.OnClick := OnSwitchFieldClick;
+  Self.OnMouseEnter := OnSwitchFieldMouseEnter;
+  Self.OnMouseLeave := OnSwitchFieldMouseExit;
+
+  FButtonLockFocus := TButton.Create(Self);
+  Self.AddObject(FButtonLockFocus);
+  FButtonLockFocus.SetSubComponent(True);
+  FButtonLockFocus.Stored := False;
+  FButtonLockFocus.Opacity := 0;
+  FButtonLockFocus.TabStop := False;
+  FButtonLockFocus.Width := 1;
+  FButtonLockFocus.Height := 1;
+  FButtonLockFocus.HitTest := False;
+  FButtonLockFocus.SendToBack;
+
+  FText := TLabel.Create(Self);
+  Self.AddObject(FText);
+  FText.Align := TAlignLayout.Client;
+  FText.HitTest := False;
+  FText.StyledSettings := [];
+  FText.TextSettings.Font.Size := 14;
+  FText.TextSettings.Font.Family := 'SF Pro Display';
+  FText.TextSettings.FontColor := TAlphaColor($FF323232);
+  // FBackupFontColor := TAlphaColor($FF323232);
+  FText.SetSubComponent(True);
+  FText.Stored := False;
+
+  FLayoutIcon := TLayout.Create(Self);
+  Self.AddObject(FLayoutIcon);
+  FLayoutIcon.Align := TAlignLayout.Left;
+  FLayoutIcon.HitTest := False;
+  FLayoutIcon.SetSubComponent(True);
+  FLayoutIcon.Stored := False;
+  FLayoutIcon.Width := 60;
+
+  FCircleMain := TCircle.Create(Self);
+  FLayoutIcon.AddObject(FCircleMain);
+  FCircleMain.Align := TAlignLayout.Center;
+  FCircleMain.HitTest := False;
+  FCircleMain.SetSubComponent(True);
+  FCircleMain.Stored := False;
+  FCircleMain.Stroke.Kind := TBrushKind.None;
+  FCircleMain.Visible := True;
+  FCircleMain.Width := 20;
+  FCircleMain.Height := 20;
+  FCircleMain.Margins.Left := -22;
+  FCircleMain.Fill.Color := SOLID_WHITE;
+
+  FRoundRectangle := TRoundRect.Create(Self);
+  FLayoutIcon.AddObject(FRoundRectangle);
+  FRoundRectangle.Align := TAlignLayout.Center;
+  FRoundRectangle.HitTest := False;
+  FRoundRectangle.SetSubComponent(True);
+  FRoundRectangle.Stored := False;
+  FRoundRectangle.Stroke.Kind := TBrushKind.None;
+  FRoundRectangle.Visible := True;
+  FRoundRectangle.Width := 34;
+  FRoundRectangle.Height := 14;
+  FRoundRectangle.SendToBack;
+  FRoundRectangle.Fill.Color := TAlphaColor($FFC4C4C4);
+
+  FCircleMainEffect := TCircle.Create(Self);
+  FCircleMain.AddObject(FCircleMainEffect);
+  FCircleMainEffect.Align := TAlignLayout.Center;
+  FCircleMainEffect.HitTest := False;
+  FCircleMainEffect.SetSubComponent(True);
+  FCircleMainEffect.Stored := False;
+  FCircleMainEffect.Stroke.Kind := TBrushKind.None;
+  FCircleMainEffect.Visible := True;
+  FCircleMainEffect.Width := 40;
+  FCircleMainEffect.Height := 40;
+  FCircleMainEffect.Opacity := 0;
+  FCircleMainEffect.SendToBack;
+  FCircleMainEffect.Fill.Color := SOLID_BLACK;
+
+  { Shadow }
+  FShadowCircleMain := TShadowEffect.Create(Self);
+  FCircleMain.AddObject(FShadowCircleMain);
+  FShadowCircleMain.Direction := 90;
+  FShadowCircleMain.Distance := 2.5;
+  FShadowCircleMain.Opacity := 0.3;
+  FShadowCircleMain.Softness := 0.2;
+  FShadowCircleMain.Enabled := True;
+
+  SetFButtonClass(TColorClass.Primary);
+end;
+
+destructor TSwitchField.Destroy;
+begin
+  if Assigned(FShadowCircleMain) then
+    FShadowCircleMain.Free;
+  if Assigned(FCircleMainEffect) then
+    FCircleMainEffect.Free;
+  if Assigned(FRoundRectangle) then
+    FRoundRectangle.Free;
+  if Assigned(FCircleMain) then
+    FCircleMain.Free;
+  if Assigned(FLayoutIcon) then
+    FLayoutIcon.Free;
+  if Assigned(FText) then
+    FText.Free;
+  if Assigned(FButtonLockFocus) then
+    FButtonLockFocus.Free;
+  inherited;
+end;
+
+procedure TSwitchField.Disable;
+begin
+  FRoundRectangle.AnimateColor('Fill.Color', TAlphaColor($FFC4C4C4), 0.2, TAnimationType.InOut);
+  FCircleMain.AnimateColor('Fill.Color', TAlphaColor($FFFFFFFF), 0.2, TAnimationType.InOut);
+  FCircleMain.AnimateFloat('Margins.Left', -22, 0.2, TAnimationType.InOut);
+  FCircleMainEffect.AnimateColor('Fill.Color', TAlphaColor($FF000000), 0.1, TAnimationType.InOut);
+end;
+
+procedure TSwitchField.Enable;
+begin
+  FRoundRectangle.AnimateColor('Fill.Color', GetColorRoundRectangle(FColorMain), 0.2, TAnimationType.InOut);
+  FCircleMain.AnimateColor('Fill.Color', FColorMain, 0.2, TAnimationType.InOut);
+  FCircleMain.AnimateFloat('Margins.Left', 22, 0.2, TAnimationType.InOut);
+  FCircleMainEffect.AnimateColor('Fill.Color', FColorMain, 0.1, TAnimationType.InOut);
+end;
+
+function TSwitchField.GetFButtonClass: TColorClass;
+begin
+  if FColorMain = SOLID_PRIMARY_COLOR then
+    Result := TColorClass.Primary
+  else if FColorMain = SOLID_SECONDARY_COLOR then
+    Result := TColorClass.Secondary
+  else if FColorMain = SOLID_ERROR_COLOR then
+    Result := TColorClass.Error
+  else if FColorMain = SOLID_WARNING_COLOR then
+    Result := TColorClass.Warning
+  else if FColorMain = SOLID_SUCCESS_COLOR then
+    Result := TColorClass.Success
+  else if FColorMain = SOLID_BLACK then
+    Result := TColorClass.Normal
+  else
+    Result := TColorClass.Custom;
+end;
+
+function TSwitchField.GetFCheckedIconColor: TAlphaColor;
+begin
+  Result := FColorMain;
+end;
+
+function TSwitchField.GetFIsChecked: Boolean;
+begin
+  Result := FCircleMain.Margins.Left > 0;
+end;
+
+function TSwitchField.GetFTag: NativeInt;
+begin
+  Result := TControl(Self).Tag;
+end;
+
+function TSwitchField.GetFText: String;
+begin
+  Result := FText.Text;
+end;
+
+function TSwitchField.GetFTextSettings: TTextSettings;
+begin
+  Result := FText.TextSettings;
+end;
+
+procedure TSwitchField.OnSwitchFieldClick(Sender: TObject);
+begin
+  if FCircleMain.Margins.Left = -22 then
+    Enable
+  else
+    Disable;
+end;
+
+procedure TSwitchField.OnSwitchFieldMouseEnter(Sender: TObject);
+begin
+  FCircleMainEffect.AnimateFloat('Opacity', 0.2, 0.1);
+end;
+
+procedure TSwitchField.OnSwitchFieldMouseExit(Sender: TObject);
+begin
+  FCircleMainEffect.AnimateFloat('Opacity', 0, 0.1);
+end;
+
+procedure TSwitchField.SetFButtonClass(const Value: TColorClass);
+begin
+  if Value = TColorClass.Primary then
+    FColorMain := SOLID_PRIMARY_COLOR
+  else if Value = TColorClass.Secondary then
+    FColorMain := SOLID_SECONDARY_COLOR
+  else if Value = TColorClass.Error then
+    FColorMain := SOLID_ERROR_COLOR
+  else if Value = TColorClass.Warning then
+    FColorMain := SOLID_WARNING_COLOR
+  else if Value = TColorClass.Normal then
+    FColorMain := SOLID_BLACK
+  else if Value = TColorClass.Success then
+    FColorMain := SOLID_SUCCESS_COLOR
+  else
+    FColorMain := TAlphaColor($FF323230);
+
+  ApplyColorChanges();
+end;
+
+procedure TSwitchField.ApplyColorChanges;
+begin
+  if Self.IsChecked then
+  begin
+    FCircleMain.Fill.Color := FColorMain;
+    FCircleMainEffect.Fill.Color := FColorMain;
+    FRoundRectangle.Fill.Color := GetColorRoundRectangle(FColorMain);
+  end;
+end;
+
+procedure TSwitchField.SetFCheckedIconColor(const Value: TAlphaColor);
+begin
+  FColorMain := Value;
+  ApplyColorChanges();
+end;
+
+procedure TSwitchField.SetFIsChecked(const Value: Boolean);
+begin
+  if Value then
+    Enable
+  else
+    Disable;
+end;
+
+procedure TSwitchField.SetFTag(const Value: NativeInt);
+begin
+  TControl(Self).Tag := Value;
+end;
+
+procedure TSwitchField.SetFText(const Value: String);
+begin
+  FText.Text := Value;
+end;
+
+procedure TSwitchField.SetFTextSettings(const Value: TTextSettings);
+begin
+  FText.TextSettings := Value;
+end;
+
+function TSwitchField.GetColorRoundRectangle(SolidColor: TAlphaColor): TAlphaColor;
+var
+  Color: TAlphaColorRec;
+begin
+  Color.Color := SolidColor;
+  Color.A := $96;
+  Result := Color.Color;
+end;
+
+end.

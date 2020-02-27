@@ -1,0 +1,150 @@
+unit SolidInput;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, FMX.Graphics,
+  FMX.Effects, System.UITypes, Input;
+
+type
+  TSolidInput = class(TInput)
+  private
+    
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FShadow: TShadowEffect;
+    FStrokeGradientDefocus: TGradient;
+    FFocusEffect: TGlowEffect;
+    FSelectedTheme: TAlphaColor;
+
+    { Events settings }
+    procedure OnEditEnter(Sender: TObject); override;
+    procedure OnEditExit(Sender: TObject); override;
+
+    function GetFSelectedColor: TAlphaColor;
+    procedure SetFSelectedColor(const Value: TAlphaColor);
+
+    procedure HideEffectValidation();
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    function ValidateText(): Boolean;
+    procedure Select();
+    procedure Deselect();
+  published
+    { Published declarations }
+    property SelectedColor: TAlphaColor read GetFSelectedColor write SetFSelectedColor;
+  end;
+
+procedure Register;
+
+implementation
+
+uses
+  ColorClass;
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TSolidInput]);
+end;
+
+{ TSolidAppleEdit }
+
+constructor TSolidInput.Create(AOwner: TComponent);
+begin
+  inherited;
+  FDarkTheme := TAlphaColor($FF424242);
+  FLightTheme := TAlphaColor($FFFFFFFF);
+  FSelectedTheme := TAlphaColor($FF006CD0);
+
+  FFocusEffect := TGlowEffect.Create(Self);
+  Self.AddObject(FFocusEffect);
+  FFocusEffect.Enabled := true;
+  FFocusEffect.GlowColor := FSelectedTheme;
+  FFocusEffect.Opacity := 0;
+  FFocusEffect.Softness := 0.2;
+  FFocusEffect.SetSubComponent(true);
+  FFocusEffect.Stored := false;
+
+  FBackground.Stroke.Kind := TBrushKind.Gradient;
+  FBackground.Stroke.Thickness := 1;
+  FBackground.Fill.Color := TAlphaColor($FFFFFFFF);
+
+  FStrokeGradientDefocus := TGradient.Create;
+  with FStrokeGradientDefocus do
+  begin
+    Color := $FFD2D2D2;
+    Color1 := $FFBABABA;
+  end;
+  FBackground.Stroke.Gradient := FStrokeGradientDefocus;
+
+  { Shadow }
+  FShadow := TShadowEffect.Create(Self);
+  FBackground.AddObject(FShadow);
+  FShadow.Direction := 90;
+  FShadow.Distance := 0.7;
+  FShadow.Opacity := 0.1;
+  FShadow.Softness := 0.1;
+  FShadow.Enabled := true;
+end;
+
+procedure TSolidInput.Select;
+begin
+  FFocusEffect.GlowColor := FSelectedTheme;
+  FFocusEffect.AnimateFloat('Opacity', 1, 0.2);
+end;
+
+procedure TSolidInput.Deselect;
+begin
+  FFocusEffect.AnimateFloat('Opacity', 0, 0.2);
+  if FInvalid then
+    ValidateText();
+end;
+
+destructor TSolidInput.Destroy;
+begin
+  if Assigned(FStrokeGradientDefocus) then
+    FStrokeGradientDefocus.Free;
+  if Assigned(FShadow) then
+    FShadow.Free;
+  if Assigned(FFocusEffect) then
+    FFocusEffect.Free;
+  inherited;
+end;
+
+procedure TSolidInput.OnEditEnter(Sender: TObject);
+begin
+  Select;
+  inherited;
+end;
+
+procedure TSolidInput.OnEditExit(Sender: TObject);
+begin
+  Deselect;
+  inherited;
+end;
+
+function TSolidInput.GetFSelectedColor: TAlphaColor;
+begin
+  Result := FSelectedTheme;
+end;
+
+procedure TSolidInput.SetFSelectedColor(const Value: TAlphaColor);
+begin
+  FSelectedTheme := Value;
+end;
+
+function TSolidInput.ValidateText: Boolean;
+begin
+  if not Self.Validate then
+  begin
+    FFocusEffect.GlowColor := SOLID_ERROR_COLOR;
+    FFocusEffect.AnimateFloat('Opacity', 1, 0.2);
+  end;
+  FInvalid := not Self.Validate;
+  Result := Self.Validate;
+end;
+
+end.

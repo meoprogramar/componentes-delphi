@@ -1,0 +1,556 @@
+unit AppleEdit;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects;
+
+type
+  TAppleEdit = class(TControl)
+  private
+    { Private declarations }
+    { Events settings }
+    procedure OnFBackgroundClick(Sender: TObject);
+    procedure SetFOnTyping(const Value: TNotifyEvent);
+    function GetFText: String;
+    procedure SetFText(const Value: String);
+    function GetFOnTyping: TNotifyEvent;
+    function GetFTextPrompt: String;
+    procedure SetFTextPrompt(const Value: String);
+    function GetFPassword: Boolean;
+    procedure SetFPassword(const Value: Boolean);
+    function GetFOnClick: TNotifyEvent;
+    procedure SetFOnClick(const Value: TNotifyEvent);
+    function GetFOnDblClick: TNotifyEvent;
+    procedure SetFOnDblClick(const Value: TNotifyEvent);
+    function GetTextSettings: TTextSettings;
+    procedure SetTextSettings(const Value: TTextSettings);
+    function GetFBackgroudColor: TBrush;
+    procedure SetFBackgroudColor(const Value: TBrush);
+    function GetFDark: Boolean;
+    procedure SetFDark(const Value: Boolean);
+    procedure SetFIconRight(const Value: Boolean);
+    function GetFHitTest: Boolean;
+    procedure SetFHitTest(const Value: Boolean);
+    function GetFCursor: TCursor;
+    procedure SetFCursor(const Value: TCursor);
+    function GetFOnKeyDown: TKeyEvent;
+    procedure SetFOnKeyDown(const Value: TKeyEvent);
+    function GetFOnKeyUp: TKeyEvent;
+    procedure SetFOnKeyUp(const Value: TKeyEvent);
+    function GetFOnMouseDown: TMouseEvent;
+    procedure SetFOnMouseDown(const Value: TMouseEvent);
+    function GetFOnMouseUp: TMouseEvent;
+    procedure SetFOnMouseUp(const Value: TMouseEvent);
+    function GetFOnMouseWheel: TMouseWheelEvent;
+    procedure SetFOnMouseWheel(const Value: TMouseWheelEvent);
+    function GetFOnMouseMove: TMouseMoveEvent;
+    procedure SetFOnMouseMove(const Value: TMouseMoveEvent);
+    function GetFOnMouseEnter: TNotifyEvent;
+    procedure SetFOnMouseEnter(const Value: TNotifyEvent);
+    function GetFOnMouseLeave: TNotifyEvent;
+    procedure SetFOnMouseLeave(const Value: TNotifyEvent);
+    function GetFMaxLength: Integer;
+    procedure SetFMaxLength(const Value: Integer);
+    function GetFFilterChar: String;
+    procedure SetFFilterChar(const Value: String);
+  protected
+    { Protected declarations }
+    FBackground: TRectangle;
+    FEdit: TEdit;
+    FIcon: TPath;
+    FLayoutIcon: TLayout;
+    FDark: Boolean;
+
+    FDarkTheme: TAlphaColor;
+    FLightTheme: TAlphaColor;
+
+    { Icon settings }
+    FIconData: TPathData;
+    FIconSize: Single;
+    FIconRight: Boolean;
+
+    procedure Paint; override;
+    procedure Resize; override;
+    procedure Painting; override;
+
+    { Repaint }
+    procedure DoChanged(Sender: TObject);
+
+    { Events settings }
+    procedure OnEditEnter(Sender: TObject); virtual;
+    procedure OnEditExit(Sender: TObject); virtual;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure SetFocus;
+    function Validate(): Boolean; virtual;
+  published
+    { Published declarations }
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+
+    { Additional properties }
+    property Cursor: TCursor read GetFCursor write SetFCursor;
+    property HitTest: Boolean read GetFHitTest write SetFHitTest default True;
+    property Dark: Boolean read GetFDark write SetFDark;
+    property BackgroudColor: TBrush read GetFBackgroudColor
+      write SetFBackgroudColor;
+    property Text: String read GetFText write SetFText;
+    property TextPrompt: String read GetFTextPrompt write SetFTextPrompt;
+    property TextSettings: TTextSettings read GetTextSettings
+      write SetTextSettings;
+    property MaxLength: Integer read GetFMaxLength write SetFMaxLength;
+    property FilterChar: String read GetFFilterChar write SetFFilterChar;
+    property Password: Boolean read GetFPassword write SetFPassword;
+    property IconData: TPathData read FIconData write FIconData;
+    property IconSize: Single read FIconSize write FIconSize;
+    property IconRight: Boolean read FIconRight write SetFIconRight;
+
+    { Optional properties - Rarely used }
+    // property CanFocus default True;
+    // property DragMode;
+    // property EnableDragHighlight;
+    // property Locked;
+    // property Padding;
+    // property PopupMenu;
+    // property TouchTargetExpansion;
+    // property TabOrder default -1;
+    // property TabStop default True;
+
+    { Events }
+    property OnPainting;
+    property OnPaint;
+    property OnResize;
+
+    { Mouse events }
+    property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
+    property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
+    property OnKeyDown: TKeyEvent read GetFOnKeyDown write SetFOnKeyDown;
+    property OnKeyUp: TKeyEvent read GetFOnKeyUp write SetFOnKeyUp;
+    property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
+    property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
+    property OnMouseWheel: TMouseWheelEvent read GetFOnMouseWheel write SetFOnMouseWheel;
+    property OnMouseMove: TMouseMoveEvent read GetFOnMouseMove write SetFOnMouseMove;
+    property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
+    property OnTyping: TNotifyEvent read GetFOnTyping write SetFOnTyping;
+
+    { Optional events - Rarely used }
+    // property OnDragEnter;
+    // property OnDragLeave;
+    // property OnDragOver;
+    // property OnDragDrop;
+    // property OnDragEnd;
+  end;
+
+implementation
+
+procedure TAppleEdit.OnEditEnter(Sender: TObject);
+begin
+
+end;
+
+procedure TAppleEdit.OnEditExit(Sender: TObject);
+begin
+
+end;
+
+procedure TAppleEdit.OnFBackgroundClick(Sender: TObject);
+begin
+  FEdit.SetFocus;
+end;
+
+procedure TAppleEdit.SetFOnClick(const Value: TNotifyEvent);
+begin
+  FEdit.OnClick := Value;
+end;
+
+procedure TAppleEdit.SetFBackgroudColor(const Value: TBrush);
+begin
+  FBackground.Fill := Value;
+end;
+
+function TAppleEdit.GetFBackgroudColor: TBrush;
+begin
+  Result := FBackground.Fill;
+end;
+
+procedure TAppleEdit.SetFCursor(const Value: TCursor);
+begin
+  FBackground.Cursor := Value;
+  FEdit.Cursor := Value;
+end;
+
+function TAppleEdit.GetFCursor: TCursor;
+begin
+  Result := FBackground.Cursor;
+end;
+
+procedure TAppleEdit.SetFDark(const Value: Boolean);
+begin
+  FDark := Value;
+  FBackground.Fill.Kind := TBrushKind.Solid;
+  if Value then
+  begin
+    FBackground.Fill.Color := FDarkTheme;
+    FEdit.TextSettings.FontColor := TAlphaColor($FFFFFFFF);
+    FIcon.Fill.Color := TAlphaColor($FFFFFFFF);
+  end
+  else
+  begin
+    FBackground.Fill.Color := FLightTheme;
+    FEdit.TextSettings.FontColor := TAlphaColor($FF323232);
+    FIcon.Fill.Color := TAlphaColor($FF515151);
+  end;
+end;
+
+procedure TAppleEdit.SetFIconRight(const Value: Boolean);
+begin
+  FIconRight := Value;
+  if FIconRight then
+  begin
+    FLayoutIcon.Align := TAlignLayout.Right;
+    FIcon.Align := TAlignLayout.Left;
+  end
+  else
+  begin
+    FLayoutIcon.Align := TAlignLayout.Left;
+    FIcon.Align := TAlignLayout.Right;
+  end;
+end;
+
+procedure TAppleEdit.SetFocus;
+begin
+  FEdit.SetFocus;
+end;
+
+function TAppleEdit.Validate: Boolean;
+begin
+  Result := not (FEdit.Text.Length = 0);
+end;
+
+function TAppleEdit.GetFDark: Boolean;
+begin
+  Result := FDark;
+end;
+
+procedure TAppleEdit.SetFFilterChar(const Value: String);
+begin
+  FEdit.FilterChar := Value;
+end;
+
+function TAppleEdit.GetFFilterChar: String;
+begin
+  Result := FEdit.FilterChar;
+end;
+
+procedure TAppleEdit.SetFHitTest(const Value: Boolean);
+begin
+  FBackground.HitTest := Value;
+  FEdit.HitTest := Value;
+end;
+
+function TAppleEdit.GetFHitTest: Boolean;
+begin
+  Result := FBackground.HitTest;
+end;
+
+procedure TAppleEdit.SetFMaxLength(const Value: Integer);
+begin
+  FEdit.MaxLength := Value;
+end;
+
+function TAppleEdit.GetFMaxLength: Integer;
+begin
+  Result := FEdit.MaxLength;
+end;
+
+function TAppleEdit.GetFOnClick: TNotifyEvent;
+begin
+  Result := FEdit.OnClick;
+end;
+
+procedure TAppleEdit.SetFOnDblClick(const Value: TNotifyEvent);
+begin
+  FEdit.OnDblClick := Value;
+end;
+
+function TAppleEdit.GetFOnDblClick: TNotifyEvent;
+begin
+  Result := FEdit.OnDblClick;
+end;
+
+procedure TAppleEdit.SetFOnKeyDown(const Value: TKeyEvent);
+begin
+  FEdit.OnKeyDown := Value;
+end;
+
+function TAppleEdit.GetFOnKeyDown: TKeyEvent;
+begin
+  Result := FEdit.OnKeyDown;
+end;
+
+procedure TAppleEdit.SetFOnKeyUp(const Value: TKeyEvent);
+begin
+  FEdit.OnKeyUp := Value;
+end;
+
+function TAppleEdit.GetFOnKeyUp: TKeyEvent;
+begin
+  Result := FEdit.OnKeyUp;
+end;
+
+procedure TAppleEdit.SetFOnMouseDown(const Value: TMouseEvent);
+begin
+  FEdit.OnMouseDown := Value;
+end;
+
+function TAppleEdit.GetFOnMouseDown: TMouseEvent;
+begin
+  Result := FEdit.OnMouseDown;
+end;
+
+procedure TAppleEdit.SetFOnMouseEnter(const Value: TNotifyEvent);
+begin
+  FEdit.OnMouseEnter := Value;
+end;
+
+function TAppleEdit.GetFOnMouseEnter: TNotifyEvent;
+begin
+  Result := FEdit.OnMouseEnter;
+end;
+
+procedure TAppleEdit.SetFOnMouseLeave(const Value: TNotifyEvent);
+begin
+  FEdit.OnMouseLeave := Value;
+end;
+
+function TAppleEdit.GetFOnMouseLeave: TNotifyEvent;
+begin
+  Result := FEdit.OnMouseLeave;
+end;
+
+procedure TAppleEdit.SetFOnMouseMove(const Value: TMouseMoveEvent);
+begin
+  FEdit.OnMouseMove := Value;
+end;
+
+function TAppleEdit.GetFOnMouseMove: TMouseMoveEvent;
+begin
+  Result := FEdit.OnMouseMove;
+end;
+
+procedure TAppleEdit.SetFOnMouseUp(const Value: TMouseEvent);
+begin
+  FEdit.OnMouseUp := Value;
+end;
+
+function TAppleEdit.GetFOnMouseUp: TMouseEvent;
+begin
+  Result := FEdit.OnMouseUp;
+end;
+
+procedure TAppleEdit.SetFOnMouseWheel(const Value: TMouseWheelEvent);
+begin
+  FEdit.OnMouseWheel := Value;
+end;
+
+function TAppleEdit.GetFOnMouseWheel: TMouseWheelEvent;
+begin
+  Result := FEdit.OnMouseWheel;
+end;
+
+procedure TAppleEdit.SetFOnTyping(const Value: TNotifyEvent);
+begin
+  FEdit.OnTyping := Value;
+end;
+
+function TAppleEdit.GetFOnTyping: TNotifyEvent;
+begin
+  Result := FEdit.OnTyping;
+end;
+
+procedure TAppleEdit.SetFText(const Value: String);
+begin
+  FEdit.Text := Value;
+end;
+
+function TAppleEdit.GetFText: String;
+begin
+  Result := FEdit.Text;
+end;
+
+procedure TAppleEdit.SetFTextPrompt(const Value: String);
+begin
+  FEdit.TextPrompt := Value;
+end;
+
+function TAppleEdit.GetFTextPrompt: String;
+begin
+  Result := FEdit.TextPrompt;
+end;
+
+procedure TAppleEdit.SetTextSettings(const Value: TTextSettings);
+begin
+  FEdit.TextSettings := Value;
+end;
+
+function TAppleEdit.GetTextSettings: TTextSettings;
+begin
+  Result := FEdit.TextSettings;
+end;
+
+procedure TAppleEdit.SetFPassword(const Value: Boolean);
+begin
+  FEdit.Password := Value;
+end;
+
+function TAppleEdit.GetFPassword: Boolean;
+begin
+  Result := FEdit.Password;
+end;
+
+{ Protected declarations }
+
+procedure TAppleEdit.Paint;
+begin
+  inherited;
+  if FIconData.Data.Equals('') then
+  begin
+    FLayoutIcon.Visible := false;
+    FIcon.Visible := false;
+  end
+  else
+  begin
+    FLayoutIcon.Visible := True;
+    FIcon.Visible := True;
+    FLayoutIcon.Width := 13 + FIconSize;
+    FIcon.Width := FIconSize;
+    FIcon.Data := FIconData;
+  end;
+end;
+
+procedure TAppleEdit.Resize;
+begin
+  inherited;
+  if Assigned(FBackground) then
+  begin
+    with FBackground do
+    begin
+      Height := self.Width * 0.85;
+      Width := self.Width * 0.85;
+      Position.X := self.Width / 2 - Width / 2;
+      Position.Y := self.Height / 2 - Height / 2;
+    end;
+  end;
+end;
+
+procedure TAppleEdit.Painting;
+begin
+  inherited;
+end;
+
+{ Repaint }
+
+procedure TAppleEdit.DoChanged(Sender: TObject);
+begin
+  Repaint;
+end;
+
+{ Public declarations }
+
+constructor TAppleEdit.Create(AOwner: TComponent);
+begin
+  inherited;
+  self.Width := 250;
+  self.Height := 40;
+
+  FIconData := TPathData.Create;
+  FIconData.OnChanged := DoChanged;
+  FIconSize := 12;
+
+  FDarkTheme := TAlphaColor($C82F2F2F);
+  FLightTheme := TAlphaColor($C8FFFFFF);
+
+  { Backgroud }
+  FBackground := TRectangle.Create(self);
+  self.AddObject(FBackground);
+  FBackground.Align := TAlignLayout.Client;
+  FBackground.Stroke.Kind := TBrushKind.None;
+  FBackground.Fill.Color := FLightTheme;
+  FBackground.XRadius := 4;
+  FBackground.YRadius := 4;
+  FBackground.SetSubComponent(True);
+  FBackground.Stored := false;
+  FBackground.OnClick := OnFBackgroundClick;
+
+  { Edit }
+  FEdit := TEdit.Create(self);
+  FEdit.Parent := FBackground;
+  FEdit.Align := TAlignLayout.Client;
+  FEdit.Margins.Top := 5;
+  FEdit.Margins.Bottom := 5;
+  FEdit.Margins.Left := 8;
+  FEdit.Margins.Right := 8;
+  FEdit.StyleLookup := 'transparentedit';
+  FEdit.TextPrompt := 'TextPrompt';
+  FEdit.StyledSettings := [];
+  FEdit.TextSettings.Font.Size := 14;
+  FEdit.TextSettings.Font.Family := 'SF Pro Display';
+  FEdit.TextSettings.FontColor := TAlphaColor($FF323232);
+  FEdit.SetSubComponent(True);
+  FEdit.Stored := false;
+
+  FEdit.OnEnter := OnEditEnter;
+  FEdit.OnExit := OnEditExit;
+
+  { Icon }
+  FLayoutIcon := TLayout.Create(self);
+  FBackground.AddObject(FLayoutIcon);
+  FLayoutIcon.Align := TAlignLayout.Left;
+  FLayoutIcon.Width := 25;
+
+  FIcon := TPath.Create(self);
+  FLayoutIcon.AddObject(FIcon);
+  FIcon.Align := TAlignLayout.Right;
+  FIcon.WrapMode := TPathWrapMode.Fit;
+  FIcon.Fill.Color := TAlphaColor($FF515151);
+  FIcon.Stroke.Kind := TBrushKind.None;
+  FIcon.Width := FIconSize;
+  FIcon.HitTest := false;
+
+  { Initial settings }
+  SetFCursor(crIBeam);
+end;
+
+destructor TAppleEdit.Destroy;
+begin
+  if Assigned(FIconData) then
+    FIconData.Free;
+  if Assigned(FIcon) then
+    FIcon.Free;
+  if Assigned(FLayoutIcon) then
+    FLayoutIcon.Free;
+  if Assigned(FEdit) then
+    FEdit.Free;
+  if Assigned(FBackground) then
+    FBackground.Free;
+  inherited;
+end;
+
+end.

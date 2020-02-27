@@ -1,0 +1,218 @@
+unit Dialog;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, FMX.Forms, Card,
+  FMX.StdCtrls;
+
+type
+  TDialog = class(TCard)
+  private
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FPointerOnClickDefocus: TNotifyEvent;
+
+    { Block focus on background }
+    FButton1: TButton;
+    FButton2: TButton;
+
+    FDefocusBackgroundCard: TRectangle;
+    FCloseOnClickDefocus: Boolean;
+
+    procedure OnClickFDefocusBackgroundCard(Sender: TObject);
+    procedure OnEnterButton2(Sender: TObject);
+    function GetFCardAlign: TAlignLayout;
+    function GetFCardHeight: Single;
+    function GetFCardMargins: TBounds;
+    function GetFCardWidth: Single;
+    procedure SetFCardAlign(const Value: TAlignLayout);
+    procedure SetFCardHeight(const Value: Single);
+    procedure SetFCardMargins(const Value: TBounds);
+    procedure SetFCardWidth(const Value: Single);
+    function GetFDefocusBackgroundColor: TAlphaColor;
+    function GetFDefocusBackgroundOpacity: Single;
+    procedure SetFDefocusBackgroundColor(const Value: TAlphaColor);
+    procedure SetFDefocusBackgroundOpacity(const Value: Single);
+    function GetFOnClickDefocus: TNotifyEvent;
+    procedure SetFOnClickDefocus(const Value: TNotifyEvent);
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Open(Duration: Single = 0.2); override;
+  published
+    { Published declarations }
+    { Additional properties }
+    property CloseOnClickDefocus: Boolean read FCloseOnClickDefocus write FCloseOnClickDefocus;
+    property CardAlign: TAlignLayout read GetFCardAlign write SetFCardAlign;
+    property CardMargins: TBounds read GetFCardMargins write SetFCardMargins;
+    property CardHeight: Single read GetFCardHeight write SetFCardHeight;
+    property CardWidth: Single read GetFCardWidth write SetFCardWidth;
+    property DefocusBackgroundColor: TAlphaColor read GetFDefocusBackgroundColor write SetFDefocusBackgroundColor;
+    property DefocusBackgroundOpacity: Single read GetFDefocusBackgroundOpacity write SetFDefocusBackgroundOpacity;
+
+    { Mouse events }
+    property OnClickDefocus: TNotifyEvent read GetFOnClickDefocus write SetFOnClickDefocus;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TDialog]);
+end;
+
+{ TDialog }
+
+constructor TDialog.Create(AOwner: TComponent);
+begin
+  inherited;
+  Align := TAlignLayout.Client;
+  CornerRound := 5;
+
+  FCloseOnClickDefocus := True;
+
+  FButton1 := TButton.Create(Self);
+  Self.AddObject(FButton1);
+  FButton1.SetSubComponent(True);
+  FButton1.Stored := False;
+  FButton1.Opacity := 0;
+
+  FButton2 := TButton.Create(Self);
+  Self.AddObject(FButton2);
+  FButton2.SetSubComponent(True);
+  FButton2.Stored := False;
+  FButton2.Opacity := 0;
+  FButton2.OnEnter := OnEnterButton2;
+
+  FButton1.TabOrder := 32700;
+  FButton2.TabOrder := 32701;
+
+  { BackgroundCard }
+  FBackgroundCard.Align := TAlignLayout.Center;
+
+  { DefocusBackgroundCard }
+  FDefocusBackgroundCard := TRectangle.Create(Self);
+  Self.AddObject(FDefocusBackgroundCard);
+  FDefocusBackgroundCard.Align := TAlignLayout.Contents;
+  FDefocusBackgroundCard.Stroke.Kind := TBrushKind.None;
+  FDefocusBackgroundCard.Fill.Color := TAlphaColor($FF000000);
+  FDefocusBackgroundCard.Opacity := 0.4;
+  FDefocusBackgroundCard.SetSubComponent(True);
+  FDefocusBackgroundCard.Stored := False;
+  FDefocusBackgroundCard.SendToBack;
+  FDefocusBackgroundCard.OnClick := OnClickFDefocusBackgroundCard;
+end;
+
+destructor TDialog.Destroy;
+begin
+  if Assigned(FDefocusBackgroundCard) then
+    FDefocusBackgroundCard.Free;
+  inherited;
+end;
+
+procedure TDialog.OnClickFDefocusBackgroundCard(Sender: TObject);
+begin
+  if FCloseOnClickDefocus then
+    Self.Close;
+
+  if Assigned(FPointerOnClickDefocus) then
+    FPointerOnClickDefocus(Sender);
+end;
+
+procedure TDialog.OnEnterButton2(Sender: TObject);
+begin
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      TThread.Synchronize(TThread.CurrentThread,
+        procedure
+        begin
+          FButton1.SetFocus;
+        end);
+    end).Start;
+end;
+
+procedure TDialog.Open(Duration: Single);
+begin
+  inherited;
+  FButton1.SetFocus;
+end;
+
+function TDialog.GetFCardAlign: TAlignLayout;
+begin
+  Result := FBackgroundCard.Align;
+end;
+
+function TDialog.GetFCardHeight: Single;
+begin
+  Result := FBackgroundCard.Height;
+end;
+
+function TDialog.GetFCardMargins: TBounds;
+begin
+  Result := FBackgroundCard.Margins;
+end;
+
+function TDialog.GetFCardWidth: Single;
+begin
+  Result := FBackgroundCard.Width;
+end;
+
+function TDialog.GetFDefocusBackgroundColor: TAlphaColor;
+begin
+  Result := FDefocusBackgroundCard.Fill.Color;
+end;
+
+function TDialog.GetFDefocusBackgroundOpacity: Single;
+begin
+  Result := FDefocusBackgroundCard.Opacity;
+end;
+
+function TDialog.GetFOnClickDefocus: TNotifyEvent;
+begin
+  Result := FPointerOnClickDefocus;
+end;
+
+procedure TDialog.SetFCardAlign(const Value: TAlignLayout);
+begin
+  FBackgroundCard.Align := Value;
+end;
+
+procedure TDialog.SetFCardHeight(const Value: Single);
+begin
+  FBackgroundCard.Height := Value;
+end;
+
+procedure TDialog.SetFCardMargins(const Value: TBounds);
+begin
+  FBackgroundCard.Margins := Value;
+end;
+
+procedure TDialog.SetFCardWidth(const Value: Single);
+begin
+  FBackgroundCard.Width := Value;
+end;
+
+procedure TDialog.SetFDefocusBackgroundColor(const Value: TAlphaColor);
+begin
+  FDefocusBackgroundCard.Fill.Color := Value;
+end;
+
+procedure TDialog.SetFDefocusBackgroundOpacity(const Value: Single);
+begin
+  FDefocusBackgroundCard.Opacity := Value;
+end;
+
+procedure TDialog.SetFOnClickDefocus(const Value: TNotifyEvent);
+begin
+  FPointerOnClickDefocus := Value;
+end;
+
+end.

@@ -1,0 +1,573 @@
+unit CheckField;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, FMX.StdCtrls, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, ColorClass;
+
+type
+  TCheckField = class(TControl)
+  private
+    function GetFOnDblClick: TNotifyEvent;
+    procedure SetFOnDblClick(const Value: TNotifyEvent);
+    function GetFOnMouseDown: TMouseEvent;
+    function GetFOnMouseEnter: TNotifyEvent;
+    function GetFOnMouseLeave: TNotifyEvent;
+    function GetFOnMouseMove: TMouseMoveEvent;
+    function GetFOnMouseUp: TMouseEvent;
+    function GetFOnMouseWheel: TMouseWheelEvent;
+    procedure SetFOnMouseDown(const Value: TMouseEvent);
+    procedure SetFOnMouseEnter(const Value: TNotifyEvent);
+    procedure SetFOnMouseLeave(const Value: TNotifyEvent);
+    procedure SetFOnMouseMove(const Value: TMouseMoveEvent);
+    procedure SetFOnMouseUp(const Value: TMouseEvent);
+    procedure SetFOnMouseWheel(const Value: TMouseWheelEvent);
+    procedure ApplyColorChanges;
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FPointerOnMouseEnter: TNotifyEvent;
+    FPointerOnMouseExit: TNotifyEvent;
+    FPointerOnClick: TNotifyEvent;
+    FPointerOnChange: TNotifyEvent;
+
+    FText: TLabel;
+    FLayoutIcon: TLayout;
+    FUncheckedIcon: TPath;
+    FCheckedIcon: TPath;
+    FCircleSelect: TCircle;
+    FLayoutClick: TLayout;
+
+    { Block focus on background }
+    FButtonLockFocus: TButton;
+
+    FColorMain: TAlphaColor;
+
+    FBackupFontColor: TAlphaColor;
+    FBackupUncheckedIconColor: TAlphaColor;
+
+    procedure OnCheckFieldClick(Sender: TObject); virtual;
+    procedure OnCheckFieldMouseEnter(Sender: TObject);
+    procedure OnCheckFieldMouseExit(Sender: TObject);
+    procedure HideEffectValidation();
+
+    procedure SetFCircleSelectColor(const Value: TAlphaColor);
+    function GetFTag: NativeInt;
+    procedure SetFTag(const Value: NativeInt);
+    function GetFOnClick: TNotifyEvent;
+    procedure SetFOnClick(const Value: TNotifyEvent);
+    function GetFButtonClass: TColorClass;
+    procedure SetFButtonClass(const Value: TColorClass);
+    function GetFCheckedIconColor: TAlphaColor;
+    function GetFUncheckedIcon: TPathData;
+    function GetFUncheckedIconColor: TAlphaColor;
+    procedure SetFCheckedIconColor(const Value: TAlphaColor);
+    procedure SetFUncheckedIcon(const Value: TPathData);
+    procedure SetFUncheckedIconColor(const Value: TAlphaColor);
+    function GetFCheckedIcon: TPathData;
+    procedure SetFCheckedIcon(const Value: TPathData);
+    function GetFIconSize: Single;
+    procedure SetFIconSize(const Value: Single);
+    function GetFText: String;
+    procedure SetFText(const Value: String);
+    function GetFTextSettings: TTextSettings;
+    procedure SetFTextSettings(const Value: TTextSettings);
+    function GetFIsChecked: Boolean;
+    procedure SetFIsChecked(const Value: Boolean);
+    function GetFOnChange: TNotifyEvent;
+    procedure SetFOnChange(const Value: TNotifyEvent);
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    function ValidateIsChecked(): Boolean; virtual;
+  published
+    { Published declarations }
+    property Cursor;
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+    property HitTest;
+
+    { Additional properties }
+    property ButtonClass: TColorClass read GetFButtonClass write SetFButtonClass;
+    property Text: String read GetFText write SetFText;
+    property TextSettings: TTextSettings read GetFTextSettings write SetFTextSettings;
+    property IsChecked: Boolean read GetFIsChecked write SetFIsChecked;
+    property CheckedIcon: TPathData read GetFCheckedIcon write SetFCheckedIcon;
+    property CheckedIconColor: TAlphaColor read GetFCheckedIconColor write SetFCheckedIconColor;
+    property UncheckedIcon: TPathData read GetFUncheckedIcon write SetFUncheckedIcon;
+    property UncheckedIconColor: TAlphaColor read GetFUncheckedIconColor write SetFUncheckedIconColor;
+    property IconSize: Single read GetFIconSize write SetFIconSize;
+    property Tag: NativeInt read GetFTag write SetFTag;
+
+    { Events }
+    property OnPainting;
+    property OnPaint;
+    property OnResize;
+
+    { Mouse events }
+    property OnChange: TNotifyEvent read GetFOnChange write SetFOnChange;
+    property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
+    property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
+    property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
+    property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
+    property OnMouseWheel: TMouseWheelEvent read GetFOnMouseWheel write SetFOnMouseWheel;
+    property OnMouseMove: TMouseMoveEvent read GetFOnMouseMove write SetFOnMouseMove;
+    property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TCheckField]);
+end;
+
+{ TCheckField }
+
+constructor TCheckField.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.Width := 250;
+  Self.Height := 30;
+
+  FButtonLockFocus := TButton.Create(Self);
+  Self.AddObject(FButtonLockFocus);
+  FButtonLockFocus.SetSubComponent(True);
+  FButtonLockFocus.Stored := False;
+  FButtonLockFocus.Opacity := 0;
+  FButtonLockFocus.TabStop := False;
+  FButtonLockFocus.Width := 1;
+  FButtonLockFocus.Height := 1;
+  FButtonLockFocus.HitTest := False;
+  FButtonLockFocus.SendToBack;
+
+  FText := TLabel.Create(Self);
+  Self.AddObject(FText);
+  FText.Align := TAlignLayout.Client;
+  FText.HitTest := False;
+  FText.Margins.Left := 10;
+  FText.StyledSettings := [];
+  FText.TextSettings.Font.Size := 14;
+  FText.TextSettings.Font.Family := 'SF Pro Display';
+  FText.TextSettings.FontColor := TAlphaColor($FF323232);
+  FBackupFontColor := TAlphaColor($FF323232);
+  FText.SetSubComponent(True);
+  FText.Stored := False;
+
+  FLayoutIcon := TLayout.Create(Self);
+  Self.AddObject(FLayoutIcon);
+  FLayoutIcon.Align := TAlignLayout.Left;
+  FLayoutIcon.HitTest := False;
+  FLayoutIcon.SetSubComponent(True);
+  FLayoutIcon.Stored := False;
+  FLayoutIcon.Width := 17;
+
+  FCircleSelect := TCircle.Create(Self);
+  FLayoutIcon.AddObject(FCircleSelect);
+  FCircleSelect.Align := TAlignLayout.Center;
+  FCircleSelect.HitTest := False;
+  FCircleSelect.SetSubComponent(True);
+  FCircleSelect.Stored := False;
+  FCircleSelect.Stroke.Kind := TBrushKind.None;
+  FCircleSelect.Visible := True;
+  FCircleSelect.Opacity := 0;
+  FCircleSelect.Width := (Self.Height) * 1.4;
+  FCircleSelect.Height := (Self.Height) * 1.4;
+  SetFCircleSelectColor(TRANSPARENT_PRIMARY_COLOR);
+  FCircleSelect.SendToBack;
+
+  FUncheckedIcon := TPath.Create(Self);
+  FLayoutIcon.AddObject(FUncheckedIcon);
+  FUncheckedIcon.SetSubComponent(True);
+  FUncheckedIcon.Stored := False;
+  FUncheckedIcon.Align := TAlignLayout.Contents;
+  FUncheckedIcon.WrapMode := TPathWrapMode.Fit;
+  FUncheckedIcon.Fill.Color := TAlphaColor($FF757575);
+  FBackupUncheckedIconColor := TAlphaColor($FF757575);
+  FUncheckedIcon.Stroke.Kind := TBrushKind.None;
+  FUncheckedIcon.HitTest := False;
+  FUncheckedIcon.Data.Data :=
+    'M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z';
+
+  FCheckedIcon := TPath.Create(Self);
+  FLayoutIcon.AddObject(FCheckedIcon);
+  FCheckedIcon.Align := TAlignLayout.Contents;
+  FCheckedIcon.WrapMode := TPathWrapMode.Fit;
+  FCheckedIcon.Fill.Color := TAlphaColor($FF1867C0);
+  FCheckedIcon.Stroke.Kind := TBrushKind.None;
+  FCheckedIcon.HitTest := False;
+  FCheckedIcon.Visible := False;
+  FCheckedIcon.Data.Data :=
+    'M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z';
+  FCheckedIcon.BringToFront;
+
+  FLayoutClick := TLayout.Create(Self);
+  Self.AddObject(FLayoutClick);
+  FLayoutClick.Align := TAlignLayout.Contents;
+  FLayoutClick.HitTest := True;
+  FLayoutClick.SetSubComponent(True);
+  FLayoutClick.Stored := False;
+  FLayoutClick.Cursor := crHandPoint;
+  FLayoutClick.OnClick := OnCheckFieldClick;
+  FLayoutClick.OnMouseEnter := OnCheckFieldMouseEnter;
+  FLayoutClick.OnMouseLeave := OnCheckFieldMouseExit;
+  FLayoutClick.BringToFront;
+end;
+
+destructor TCheckField.Destroy;
+begin
+  if Assigned(FLayoutClick) then
+    FLayoutClick.Free;
+  if Assigned(FCheckedIcon) then
+    FCheckedIcon.Free;
+  if Assigned(FUncheckedIcon) then
+    FUncheckedIcon.Free;
+  if Assigned(FText) then
+    FText.Free;
+  if Assigned(FButtonLockFocus) then
+    FButtonLockFocus.Free;
+  inherited;
+end;
+
+procedure TCheckField.OnCheckFieldClick(Sender: TObject);
+var
+  CircleEffect: TCircle;
+begin
+  FButtonLockFocus.SetFocus; { Takes the focus off other components }
+
+  CircleEffect := TCircle.Create(Self);
+  CircleEffect.HitTest := False;
+  CircleEffect.Parent := FLayoutIcon;
+  CircleEffect.Align := TAlignLayout.Center;
+  CircleEffect.Stroke.Kind := TBrushKind.None;
+  CircleEffect.Fill.Color := FCheckedIcon.Fill.Color;
+  CircleEffect.SendToBack;
+
+  CircleEffect.Height := 0;
+  CircleEffect.Width := 0;
+  CircleEffect.Opacity := 0.6;
+  CircleEffect.AnimateFloat('Height', FCircleSelect.Height, 0.4, TAnimationType.Out, TInterpolationType.Circular);
+  CircleEffect.AnimateFloat('Width', FCircleSelect.Width, 0.4, TAnimationType.Out, TInterpolationType.Circular);
+  CircleEffect.AnimateFloat('Opacity', 0, 0.5);
+
+  if not FCheckedIcon.Visible then
+  begin
+    if FUncheckedIcon.Fill.Color = SOLID_ERROR_COLOR then
+    begin
+      FText.TextSettings.FontColor := FBackupFontColor;
+      FUncheckedIcon.Fill.Color := FBackupUncheckedIconColor;
+    end;
+
+    FCheckedIcon.Visible := True;
+    FUncheckedIcon.Visible := False;
+  end
+  else
+  begin
+    FUncheckedIcon.Visible := True;
+    FCheckedIcon.Visible := False;
+  end;
+
+  if Assigned(FPointerOnClick) then
+    FPointerOnClick(Sender);
+
+  if Assigned(FPointerOnChange) then
+    FPointerOnChange(Sender);
+end;
+
+procedure TCheckField.OnCheckFieldMouseEnter(Sender: TObject);
+begin
+  FCircleSelect.AnimateFloat('Opacity', 1, 0.1, TAnimationType.InOut);
+
+  if Assigned(FPointerOnMouseEnter) then
+    FPointerOnMouseEnter(Sender);
+end;
+
+procedure TCheckField.OnCheckFieldMouseExit(Sender: TObject);
+begin
+  FCircleSelect.AnimateFloat('Opacity', 0, 0.1, TAnimationType.InOut);
+
+  if Assigned(FPointerOnMouseExit) then
+    FPointerOnMouseExit(Sender);
+end;
+
+function TCheckField.GetFCheckedIconColor: TAlphaColor;
+begin
+  Result := FColorMain;
+end;
+
+function TCheckField.GetFIconSize: Single;
+begin
+  Result := FLayoutIcon.Width;
+end;
+
+function TCheckField.GetFIsChecked: Boolean;
+begin
+  Result := FCheckedIcon.Visible;
+end;
+
+function TCheckField.GetFOnChange: TNotifyEvent;
+begin
+  Result := FPointerOnChange;
+end;
+
+function TCheckField.GetFOnClick: TNotifyEvent;
+begin
+  Result := FPointerOnClick;
+end;
+
+function TCheckField.GetFOnDblClick: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnDblClick;
+end;
+
+function TCheckField.GetFOnMouseDown: TMouseEvent;
+begin
+  Result := FLayoutClick.OnMouseDown;
+end;
+
+function TCheckField.GetFOnMouseEnter: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnMouseEnter;
+end;
+
+function TCheckField.GetFOnMouseLeave: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnMouseLeave;
+end;
+
+function TCheckField.GetFOnMouseMove: TMouseMoveEvent;
+begin
+  Result := FLayoutClick.OnMouseMove;
+end;
+
+function TCheckField.GetFOnMouseUp: TMouseEvent;
+begin
+  Result := FLayoutClick.OnMouseUp;
+end;
+
+function TCheckField.GetFOnMouseWheel: TMouseWheelEvent;
+begin
+  Result := FLayoutClick.OnMouseWheel;
+end;
+
+function TCheckField.GetFTag: NativeInt;
+begin
+  Result := TControl(Self).Tag;
+end;
+
+function TCheckField.GetFText: String;
+begin
+  Result := FText.Text;
+end;
+
+function TCheckField.GetFTextSettings: TTextSettings;
+begin
+  Result := FText.TextSettings;
+end;
+
+function TCheckField.GetFUncheckedIcon: TPathData;
+begin
+  Result := FUncheckedIcon.Data;
+end;
+
+function TCheckField.GetFUncheckedIconColor: TAlphaColor;
+begin
+  Result := FUncheckedIcon.Fill.Color;
+end;
+
+function TCheckField.GetFButtonClass: TColorClass;
+begin
+  if FColorMain = SOLID_PRIMARY_COLOR then
+    Result := TColorClass.Primary
+  else if FColorMain = SOLID_SECONDARY_COLOR then
+    Result := TColorClass.Secondary
+  else if FColorMain = SOLID_ERROR_COLOR then
+    Result := TColorClass.Error
+  else if FColorMain = SOLID_WARNING_COLOR then
+    Result := TColorClass.Warning
+  else if FColorMain = SOLID_SUCCESS_COLOR then
+    Result := TColorClass.Success
+  else if FColorMain = SOLID_BLACK then
+    Result := TColorClass.Normal
+  else
+    Result := TColorClass.Custom;
+end;
+
+function TCheckField.GetFCheckedIcon: TPathData;
+begin
+  Result := FCheckedIcon.Data;
+end;
+
+procedure TCheckField.SetFButtonClass(const Value: TColorClass);
+begin
+  if Value = TColorClass.Primary then
+    FColorMain := SOLID_PRIMARY_COLOR
+  else if Value = TColorClass.Secondary then
+    FColorMain := SOLID_SECONDARY_COLOR
+  else if Value = TColorClass.Error then
+    FColorMain := SOLID_ERROR_COLOR
+  else if Value = TColorClass.Warning then
+    FColorMain := SOLID_WARNING_COLOR
+  else if Value = TColorClass.Normal then
+    FColorMain := SOLID_BLACK
+  else if Value = TColorClass.Success then
+    FColorMain := SOLID_SUCCESS_COLOR
+  else
+    FColorMain := TAlphaColor($FF323230);
+
+  ApplyColorChanges();
+end;
+
+procedure TCheckField.ApplyColorChanges;
+begin
+  if Self.IsChecked then
+  begin
+    FCheckedIcon.Fill.Color := FColorMain;
+    FCircleSelect.Fill.Color := FColorMain;
+  end;
+end;
+
+procedure TCheckField.SetFCheckedIcon(const Value: TPathData);
+begin
+  FCheckedIcon.Data := Value;
+end;
+
+procedure TCheckField.SetFCheckedIconColor(const Value: TAlphaColor);
+begin
+  FColorMain := Value;
+  ApplyColorChanges();
+end;
+
+procedure TCheckField.SetFCircleSelectColor(const Value: TAlphaColor);
+begin
+  FCircleSelect.Fill.Color := Value;
+end;
+
+procedure TCheckField.SetFIconSize(const Value: Single);
+begin
+  FLayoutIcon.Width := Value;
+  FLayoutIcon.Height := Value;
+  Self.Height := (FLayoutIcon.Width) * 1.4;
+end;
+
+procedure TCheckField.SetFIsChecked(const Value: Boolean);
+begin
+  FCheckedIcon.Visible := Value;
+  FUncheckedIcon.Visible := not Value;
+  HideEffectValidation();
+end;
+
+procedure TCheckField.SetFOnChange(const Value: TNotifyEvent);
+begin
+  FPointerOnChange := Value;
+end;
+
+procedure TCheckField.SetFOnClick(const Value: TNotifyEvent);
+begin
+  FPointerOnClick := Value;
+end;
+
+procedure TCheckField.SetFOnDblClick(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnDblClick := Value;
+end;
+
+procedure TCheckField.SetFOnMouseDown(const Value: TMouseEvent);
+begin
+  FLayoutClick.OnMouseDown := Value;
+end;
+
+procedure TCheckField.SetFOnMouseEnter(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnMouseEnter := Value;
+end;
+
+procedure TCheckField.SetFOnMouseLeave(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnMouseLeave := Value;
+end;
+
+procedure TCheckField.SetFOnMouseMove(const Value: TMouseMoveEvent);
+begin
+  FLayoutClick.OnMouseMove := Value;
+end;
+
+procedure TCheckField.SetFOnMouseUp(const Value: TMouseEvent);
+begin
+  FLayoutClick.OnMouseUp := Value;
+end;
+
+procedure TCheckField.SetFOnMouseWheel(const Value: TMouseWheelEvent);
+begin
+  FLayoutClick.OnMouseWheel := Value;
+end;
+
+procedure TCheckField.SetFTag(const Value: NativeInt);
+begin
+  FLayoutClick.Tag := Value;
+  TControl(Self).Tag := Value;
+end;
+
+procedure TCheckField.SetFText(const Value: String);
+begin
+  FText.Text := Value;
+end;
+
+procedure TCheckField.SetFTextSettings(const Value: TTextSettings);
+begin
+  FText.TextSettings := Value;
+  FBackupFontColor := Value.FontColor;
+end;
+
+procedure TCheckField.SetFUncheckedIcon(const Value: TPathData);
+begin
+  FUncheckedIcon.Data := Value;
+end;
+
+procedure TCheckField.SetFUncheckedIconColor(const Value: TAlphaColor);
+begin
+  FUncheckedIcon.Fill.Color := Value;
+  FBackupUncheckedIconColor := Value;
+end;
+
+function TCheckField.ValidateIsChecked: Boolean;
+begin
+  if not Self.IsChecked and (FUncheckedIcon.Fill.Color <> SOLID_ERROR_COLOR) then
+  begin
+    FBackupFontColor := FText.TextSettings.FontColor;
+    FBackupUncheckedIconColor := FUncheckedIcon.Fill.Color;
+
+    FText.TextSettings.FontColor := SOLID_ERROR_COLOR;
+    FUncheckedIcon.Fill.Color := SOLID_ERROR_COLOR;
+  end;
+  Result := Self.IsChecked;
+end;
+
+procedure TCheckField.HideEffectValidation;
+begin
+  if FUncheckedIcon.Fill.Color = SOLID_ERROR_COLOR then
+  begin
+    FText.TextSettings.FontColor := FBackupFontColor;
+    FUncheckedIcon.Fill.Color := FBackupUncheckedIconColor;
+  end;
+end;
+
+end.

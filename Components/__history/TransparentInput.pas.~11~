@@ -1,0 +1,131 @@
+unit TransparentInput;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, Input;
+
+type
+  TTransparentInput = class(TInput)
+  private
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FSelectedTheme: TAlphaColor;
+
+    { Events settings }
+    procedure OnEditEnter(Sender: TObject); override;
+    procedure OnEditExit(Sender: TObject); override;
+    procedure SetFText(const Value: String); override;
+
+    function GetFSelectedColor: TAlphaColor;
+    procedure SetFSelectedColor(const Value: TAlphaColor);
+
+    procedure HideEffectValidation();
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    function ValidateText(): Boolean;
+    procedure Select();
+    procedure Deselect();
+  published
+    { Published declarations }
+    property SelectedColor: TAlphaColor read GetFSelectedColor write SetFSelectedColor;
+  end;
+
+procedure Register;
+
+implementation
+
+uses
+  ColorClass;
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TTransparentInput]);
+end;
+
+{ Protected declarations }
+
+{ TTransparentAppleEdit }
+
+constructor TTransparentInput.Create(AOwner: TComponent);
+begin
+  inherited;
+  FSelectedTheme := TAlphaColor($C8006CD0);
+
+  FBackground.Stroke.Kind := TBrushKind.Solid;
+  FBackground.Stroke.Color := FSelectedTheme;
+  FBackground.Stroke.Thickness := 0;
+end;
+
+procedure TTransparentInput.Select;
+begin
+  FBackground.Stroke.Color := FSelectedTheme;
+  FBackground.AnimateFloat('Stroke.Thickness', 1, 0.2);
+end;
+
+procedure TTransparentInput.Deselect;
+begin
+  FBackground.AnimateFloat('Stroke.Thickness', 0, 0.2);
+  if FInvalid then
+    ValidateText();
+end;
+
+destructor TTransparentInput.Destroy;
+begin
+  inherited;
+end;
+
+procedure TTransparentInput.SetFSelectedColor(const Value: TAlphaColor);
+begin
+  FSelectedTheme := Value;
+end;
+
+procedure TTransparentInput.SetFText(const Value: String);
+begin
+  inherited;
+  HideEffectValidation();
+end;
+
+function TTransparentInput.GetFSelectedColor: TAlphaColor;
+begin
+  Result := FSelectedTheme;
+end;
+
+procedure TTransparentInput.OnEditEnter(Sender: TObject);
+begin
+  Select;
+  inherited;
+end;
+
+procedure TTransparentInput.OnEditExit(Sender: TObject);
+begin
+  Deselect;
+  inherited;
+end;
+
+function TTransparentInput.ValidateText: Boolean;
+begin
+  if not Self.Validate then
+  begin
+    FBackground.Stroke.Color := SOLID_ERROR_COLOR;
+    FBackground.AnimateFloat('Stroke.Thickness', 1, 0.2);
+  end;
+  FInvalid := not Self.Validate;
+  Result := Self.Validate;
+end;
+
+procedure TTransparentInput.HideEffectValidation;
+begin
+  if FBackground.Stroke.Color = SOLID_ERROR_COLOR then
+  begin
+    FBackground.Stroke.Color := FSelectedTheme;
+    FBackground.AnimateFloat('Stroke.Thickness', 0, 0.2);
+  end;
+end;
+
+end.

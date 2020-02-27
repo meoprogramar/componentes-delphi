@@ -1,0 +1,116 @@
+unit SolidAppleComboBox;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, SolidAppleEdit;
+
+type
+  TSolidAppleComboBox = class(TControl)
+  private
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FSolidAppleEdit: TSolidAppleEdit;
+    FBackground: TRectangle;
+
+    procedure Paint; override;
+    procedure Resize; override;
+    procedure Painting; override;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    { Published declarations }
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TSolidAppleComboBox]);
+end;
+
+{ TSolidAppleComboBox }
+
+constructor TSolidAppleComboBox.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.Width := 400;
+  Self.Height := 200;
+
+  FSolidAppleEdit := TSolidAppleEdit.Create(Self);
+  Self.AddObject(FSolidAppleEdit);
+  with FSolidAppleEdit do
+  begin
+    Align := TAlignLayout.Top;
+    SetSubComponent(True);
+    Stored := False;
+    ReadOnly := True;
+  end;
+
+  FBackground := TRectangle.Create(Self);
+  Self.AddObject(FBackground);
+  with FBackground do
+  begin
+    Align := TAlignLayout.Client;
+    Stroke.Kind := TBrushKind.None;
+    Fill.Color := TAlphaColor($FFFFFFFF);
+    XRadius := 5;
+    YRadius := 5;
+    SetSubComponent(True);
+    Stored := False;
+  end;
+end;
+
+destructor TSolidAppleComboBox.Destroy;
+begin
+  if Assigned(FSolidAppleEdit) then
+    FSolidAppleEdit.Free;
+  inherited;
+end;
+
+procedure TSolidAppleComboBox.Paint;
+begin
+  inherited;
+end;
+
+procedure TSolidAppleComboBox.Painting;
+begin
+  inherited;
+end;
+
+procedure TSolidAppleComboBox.Resize;
+begin
+  inherited;
+  // if Assigned(FLayoutGeral) then
+  // begin
+  // with FLayoutGeral do
+  // begin
+  // Height := Self.Width * 0.85;
+  // Width := Self.Width * 0.85;
+  // Position.X := Self.Width / 2 - Width / 2;
+  // Position.Y := Self.Height / 2 - Height / 2;
+  // end;
+  // end;
+end;
+
+end.
