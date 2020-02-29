@@ -14,8 +14,6 @@ type
     { Private declarations }
   protected
     { Protected declarations }
-    FSelectedTheme: TAlphaColor;
-
     { Events settings }
     procedure OnEditEnter(Sender: TObject); override;
     procedure OnEditExit(Sender: TObject); override;
@@ -29,6 +27,7 @@ type
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     function ValidateText(): Boolean;
+    procedure Clear; override;
     procedure Select();
     procedure Deselect();
   published
@@ -95,6 +94,13 @@ end;
 procedure TTransparentLongInput.SetFText(const Value: String);
 begin
   inherited;
+  if not Self.Text.Equals('') then
+    HideEffectValidation();
+end;
+
+procedure TTransparentLongInput.Clear;
+begin
+  inherited;
   HideEffectValidation();
 end;
 
@@ -102,6 +108,9 @@ function TTransparentLongInput.ValidateText: Boolean;
 begin
   if not Self.Validate then
   begin
+    if FTextPromptAnimation then
+      FLabel.AnimateColor('TextSettings.FontColor', SOLID_ERROR_COLOR, 0.25, TAnimationType.InOut,
+        TInterpolationType.Circular);
     FBackground.Stroke.Color := SOLID_ERROR_COLOR;
     FBackground.AnimateFloat('Stroke.Thickness', 1, 0.2);
   end;
@@ -113,6 +122,9 @@ procedure TTransparentLongInput.HideEffectValidation;
 begin
   if FBackground.Stroke.Color = SOLID_ERROR_COLOR then
   begin
+    if FTextPromptAnimation then
+      FLabel.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
     FBackground.Stroke.Color := FSelectedTheme;
     FBackground.AnimateFloat('Stroke.Thickness', 0, 0.2);
   end;

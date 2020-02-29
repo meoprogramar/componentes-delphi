@@ -5,7 +5,8 @@ interface
 uses
   System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
   FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
-  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, LongInput;
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, LongInput,
+  FMX.StdCtrls;
 
 type
   TIconPosition = (Left, Right);
@@ -13,16 +14,23 @@ type
   TInput = class(TControl)
   private
     { Private declarations }
+    procedure AnimationLabelTextPromptOnEnter();
+    procedure AnimationLabelTextPromptOnExit();
   protected
     { Protected declarations }
+    FPointerOnChangeTracking: TNotifyEvent;
     FPointerOnEnter: TNotifyEvent;
     FPointerOnExit: TNotifyEvent;
     FPointerOnIconClick: TNotifyEvent;
     FPointerOnKeyUp: TKeyEvent;
 
+    FChangeTextSettings: Boolean;
+    FSelectedTheme: TAlphaColor;
+    FTextPromptAnimation: Boolean;
     FInvalid: Boolean;
     FBackground: TRectangle;
     FEdit: TEdit;
+    FLabelTextPrompt: TLabel;
     FIcon: TPath;
     FLayoutIcon: TLayout;
     FLayoutIconClick: TLayout;
@@ -35,6 +43,7 @@ type
     procedure DoChanged(Sender: TObject);
 
     { Events settings }
+    procedure OnEditChangeTracking(Sender: TObject); virtual;
     procedure OnEditEnter(Sender: TObject); virtual;
     procedure OnEditExit(Sender: TObject); virtual;
     procedure SetFText(const Value: String); virtual;
@@ -67,8 +76,6 @@ type
     procedure SetFCursor(const Value: TCursor);
     function GetFOnKeyDown: TKeyEvent;
     procedure SetFOnKeyDown(const Value: TKeyEvent);
-    function GetFOnKeyUp: TKeyEvent;
-    procedure SetFOnKeyUp(const Value: TKeyEvent);
     function GetFOnMouseDown: TMouseEvent;
     procedure SetFOnMouseDown(const Value: TMouseEvent);
     function GetFOnMouseUp: TMouseEvent;
@@ -85,10 +92,6 @@ type
     procedure SetFMaxLength(const Value: Integer);
     function GetFFilterChar: String;
     procedure SetFFilterChar(const Value: String);
-    function GetFOnEnter: TNotifyEvent;
-    function GetFOnExit: TNotifyEvent;
-    procedure SetFOnEnter(const Value: TNotifyEvent);
-    procedure SetFOnExit(const Value: TNotifyEvent);
     function GetFReadOnly: Boolean;
     procedure SetFReadOnly(const Value: Boolean);
     function GetFOnIconClick: TNotifyEvent;
@@ -107,7 +110,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure SetFocus; reintroduce;
-    procedure Clear;
+    procedure Clear; virtual;
   published
     { Published declarations }
     property Align;
@@ -133,6 +136,7 @@ type
     property BackgroudColor: TBrush read GetFBackgroudColor write SetFBackgroudColor;
     property Text: String read GetFText write SetFText;
     property TextPrompt: String read GetFTextPrompt write SetFTextPrompt;
+    property TextPromptAnimation: Boolean read FTextPromptAnimation write FTextPromptAnimation;
     property TextSettings: TTextSettings read GetTextSettings write SetTextSettings;
     property MaxLength: Integer read GetFMaxLength write SetFMaxLength;
     property FilterChar: String read GetFFilterChar write SetFFilterChar;
@@ -153,7 +157,7 @@ type
     property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
     property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
     property OnKeyDown: TKeyEvent read GetFOnKeyDown write SetFOnKeyDown;
-    property OnKeyUp: TKeyEvent read GetFOnKeyUp write SetFOnKeyUp;
+    property OnKeyUp: TKeyEvent read FPointerOnKeyUp write FPointerOnKeyUp;
     property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
     property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
     property OnMouseWheel: TMouseWheelEvent read GetFOnMouseWheel write SetFOnMouseWheel;
@@ -161,20 +165,78 @@ type
     property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
     property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
     property OnTyping: TNotifyEvent read GetFOnTyping write SetFOnTyping;
-    property OnEnter: TNotifyEvent read GetFOnEnter write SetFOnEnter;
-    property OnExit: TNotifyEvent read GetFOnExit write SetFOnExit;
+    property OnEnter: TNotifyEvent read FPointerOnEnter write FPointerOnEnter;
+    property OnExit: TNotifyEvent read FPointerOnExit write FPointerOnExit;
+    property OnChangeTracking: TNotifyEvent read FPointerOnChangeTracking write FPointerOnChangeTracking;
   end;
 
 implementation
 
+uses
+  System.Threading;
+
+procedure TInput.AnimationLabelTextPromptOnEnter;
+begin
+  if FTextPromptAnimation then
+  begin
+    FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 25, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+    FLabelTextPrompt.AnimateFloat('Margins.Left', 2, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size - 2, 0.25,
+      TAnimationType.InOut, TInterpolationType.Circular);
+    FLabelTextPrompt.AnimateColor('TextSettings.FontColor', FSelectedTheme, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+  end
+  else
+    FLabelTextPrompt.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+end;
+
+procedure TInput.AnimationLabelTextPromptOnExit;
+begin
+  if FTextPromptAnimation and Self.Text.Equals('') then
+  begin
+    FLabelTextPrompt.AnimateFloat('Margins.Top', 0, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabelTextPrompt.AnimateFloat('Margins.Left', 10, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+  end;
+  if not FInvalid then
+    FLabelTextPrompt.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+end;
+
+procedure TInput.OnEditChangeTracking(Sender: TObject);
+begin
+  if not FTextPromptAnimation then
+  begin
+    if FEdit.Text.Equals('') then
+      FLabelTextPrompt.Visible := True
+    else
+      FLabelTextPrompt.Visible := False;
+  end
+  else
+  begin
+    if not FLabelTextPrompt.Visible then
+      FLabelTextPrompt.Visible := True;
+  end;
+
+  if Assigned(FPointerOnChangeTracking) then
+    FPointerOnChangeTracking(Sender);
+end;
+
 procedure TInput.OnEditEnter(Sender: TObject);
 begin
+  AnimationLabelTextPromptOnEnter;
+
   if Assigned(FPointerOnEnter) then
     FPointerOnEnter(Sender);
 end;
 
 procedure TInput.OnEditExit(Sender: TObject);
 begin
+  AnimationLabelTextPromptOnExit;
+
   if Assigned(FPointerOnExit) then
     FPointerOnExit(Sender);
 end;
@@ -359,26 +421,6 @@ begin
   Result := FEdit.OnDblClick;
 end;
 
-procedure TInput.SetFOnEnter(const Value: TNotifyEvent);
-begin
-  FPointerOnEnter := Value;
-end;
-
-function TInput.GetFOnEnter: TNotifyEvent;
-begin
-  Result := FPointerOnEnter;
-end;
-
-procedure TInput.SetFOnExit(const Value: TNotifyEvent);
-begin
-  FPointerOnExit := Value;
-end;
-
-function TInput.GetFOnExit: TNotifyEvent;
-begin
-  Result := FPointerOnExit;
-end;
-
 procedure TInput.SetFOnIconClick(const Value: TNotifyEvent);
 begin
   FPointerOnIconClick := Value;
@@ -401,16 +443,6 @@ end;
 function TInput.GetFOnKeyDown: TKeyEvent;
 begin
   Result := FEdit.OnKeyDown;
-end;
-
-procedure TInput.SetFOnKeyUp(const Value: TKeyEvent);
-begin
-  FPointerOnKeyUp := Value;
-end;
-
-function TInput.GetFOnKeyUp: TKeyEvent;
-begin
-  Result := FPointerOnKeyUp;
 end;
 
 procedure TInput.SetFOnMouseDown(const Value: TMouseEvent);
@@ -499,6 +531,33 @@ end;
 procedure TInput.SetFText(const Value: String);
 begin
   FEdit.Text := Value;
+  if not FEdit.Text.Equals('') then
+  begin
+    if FTextPromptAnimation then
+    begin
+      FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 25, 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+      FLabelTextPrompt.AnimateFloat('Margins.Left', 2, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size - 2, 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+    end;
+    if FInvalid then
+      FLabelTextPrompt.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+  end
+  else
+  begin
+    if FTextPromptAnimation then
+    begin
+      FLabelTextPrompt.AnimateFloat('Margins.Top', 0, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabelTextPrompt.AnimateFloat('Margins.Left', 10, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size, 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+    end;
+    if not FInvalid then
+      FLabelTextPrompt.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+  end;
 end;
 
 function TInput.GetFTag: NativeInt;
@@ -513,17 +572,18 @@ end;
 
 procedure TInput.SetFTextPrompt(const Value: String);
 begin
-  FEdit.TextPrompt := Value;
+  FLabelTextPrompt.Text := Value;
 end;
 
 function TInput.GetFTextPrompt: String;
 begin
-  Result := FEdit.TextPrompt;
+  Result := FLabelTextPrompt.Text;
 end;
 
 procedure TInput.SetTextSettings(const Value: TTextSettings);
 begin
   FEdit.TextSettings := Value;
+  FChangeTextSettings := True;
 end;
 
 function TInput.GetTextSettings: TTextSettings;
@@ -567,6 +627,15 @@ begin
     FIcon.Visible := True;
     FLayoutIcon.Width := 13 + FIcon.Width;
   end;
+
+  if FChangeTextSettings then
+  begin
+    FLabelTextPrompt.TextSettings := FEdit.TextSettings;
+    FLabelTextPrompt.TextSettings.FontColor := TAlphaColor($FF999999);
+    if not Self.Text.Equals('') and FTextPromptAnimation then
+      FLabelTextPrompt.TextSettings.Font.Size := FLabelTextPrompt.TextSettings.Font.Size - 2;
+    FChangeTextSettings := False;
+  end;
 end;
 
 { Repaint }
@@ -584,6 +653,9 @@ begin
   Self.Width := 250;
   Self.Height := 40;
 
+  FTextPromptAnimation := True;
+  FChangeTextSettings := True;
+
   { Backgroud }
   FBackground := TRectangle.Create(Self);
   Self.AddObject(FBackground);
@@ -598,7 +670,7 @@ begin
 
   { Edit }
   FEdit := TEdit.Create(Self);
-  FEdit.Parent := FBackground;
+  FBackground.AddObject(FEdit);
   FEdit.Align := TAlignLayout.Client;
   FEdit.Margins.Top := 5;
   FEdit.Margins.Bottom := 5;
@@ -616,6 +688,20 @@ begin
 
   FEdit.OnEnter := OnEditEnter;
   FEdit.OnExit := OnEditExit;
+  FEdit.OnChangeTracking := OnEditChangeTracking;
+
+  FLabelTextPrompt := TLabel.Create(Self);
+  Self.AddObject(FLabelTextPrompt);
+  FLabelTextPrompt.Align := TAlignLayout.Client;
+  FLabelTextPrompt.HitTest := False;
+  FLabelTextPrompt.Margins.Left := 10;
+  FLabelTextPrompt.Margins.Right := 10;
+  FLabelTextPrompt.StyledSettings := [];
+  FLabelTextPrompt.TextSettings.Font.Size := 14;
+  FLabelTextPrompt.TextSettings.Font.Family := 'SF Pro Display';
+  FLabelTextPrompt.SetSubComponent(True);
+  FLabelTextPrompt.Stored := False;
+  FLabelTextPrompt.TextSettings.FontColor := TAlphaColor($FF999999);
 
   { Icon }
   FLayoutIcon := TLayout.Create(Self);
@@ -653,10 +739,14 @@ end;
 
 destructor TInput.Destroy;
 begin
+  if Assigned(FLayoutIconClick) then
+    FLayoutIconClick.Free;
   if Assigned(FIcon) then
     FIcon.Free;
   if Assigned(FLayoutIcon) then
     FLayoutIcon.Free;
+  if Assigned(FLabelTextPrompt) then
+    FLabelTextPrompt.Free;
   if Assigned(FEdit) then
     FEdit.Free;
   if Assigned(FBackground) then

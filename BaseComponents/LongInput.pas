@@ -15,20 +15,26 @@ type
   private
     { Private declarations }
     procedure FMemoOnApplyStyleLookup(Sender: TObject);
-    procedure FMemoOnChangeTracking(Sender: TObject);
     procedure EventOnChangeTracking(Sender: TObject);
+
+    procedure AnimationLabelTextPromptOnEnter;
+    procedure AnimationLabelTextPromptOnExit;
+    procedure RefreshCharacterCounter;
   protected
     { Protected declarations }
-    FPointerOnTyping: TNotifyEvent;
     FPointerOnChangeTracking: TNotifyEvent;
     FPointerOnEnter: TNotifyEvent;
     FPointerOnExit: TNotifyEvent;
     FPointerOnKeyUp: TKeyEvent;
 
+    FChangeTextSettings: Boolean;
+    FSelectedTheme: TAlphaColor;
+    FTextPromptAnimation: Boolean;
     FInvalid: Boolean;
     FBackground: TRectangle;
     FMemo: TMemo;
     FLabel: TLabel;
+    FLabelLengthCount: TLabel;
     FDark: Boolean;
     FTabNext: TControl;
 
@@ -47,10 +53,10 @@ type
     function Validate(): Boolean; virtual;
     procedure SetFText(const Value: String); virtual;
 
+    function GetFCharacterCounter: Boolean;
+    procedure SetFCharacterCounter(const Value: Boolean);
     function GetFTag: NativeInt;
     procedure SetFTag(const Value: NativeInt);
-    function GetFOnChangeTracking: TNotifyEvent;
-    procedure SetFOnChangeTracking(const Value: TNotifyEvent);
     procedure SetFTabNext(const Value: TControl);
     procedure OnFBackgroundClick(Sender: TObject);
     function GetFText: String;
@@ -72,8 +78,6 @@ type
     procedure SetFCursor(const Value: TCursor);
     function GetFOnKeyDown: TKeyEvent;
     procedure SetFOnKeyDown(const Value: TKeyEvent);
-    function GetFOnKeyUp: TKeyEvent;
-    procedure SetFOnKeyUp(const Value: TKeyEvent);
     function GetFOnMouseDown: TMouseEvent;
     procedure SetFOnMouseDown(const Value: TMouseEvent);
     function GetFOnMouseUp: TMouseEvent;
@@ -88,10 +92,6 @@ type
     procedure SetFOnMouseLeave(const Value: TNotifyEvent);
     function GetFMaxLength: Integer;
     procedure SetFMaxLength(const Value: Integer);
-    function GetFOnEnter: TNotifyEvent;
-    function GetFOnExit: TNotifyEvent;
-    procedure SetFOnEnter(const Value: TNotifyEvent);
-    procedure SetFOnExit(const Value: TNotifyEvent);
     function GetFReadOnly: Boolean;
     procedure SetFReadOnly(const Value: Boolean);
     function GetFCanFocus: Boolean;
@@ -103,7 +103,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure SetFocus; reintroduce;
-    procedure Clear;
+    procedure Clear; virtual;
   published
     { Published declarations }
     property Align;
@@ -130,8 +130,10 @@ type
     property BackgroudColor: TAlphaColor read GetFBackgroudColor write SetFBackgroudColor;
     property Text: String read GetFText write SetFText;
     property TextPrompt: String read GetFTextPrompt write SetFTextPrompt;
+    property TextPromptAnimation: Boolean read FTextPromptAnimation write FTextPromptAnimation;
     property TextSettings: TTextSettings read GetTextSettings write SetTextSettings;
     property MaxLength: Integer read GetFMaxLength write SetFMaxLength;
+    property CharacterCounter: Boolean read GetFCharacterCounter write SetFCharacterCounter;
     property TabNext: TControl read FTabNext write SetFTabNext;
     property Tag: NativeInt read GetFTag write SetFTag;
 
@@ -144,17 +146,16 @@ type
     property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
     property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
     property OnKeyDown: TKeyEvent read GetFOnKeyDown write SetFOnKeyDown;
-    property OnKeyUp: TKeyEvent read GetFOnKeyUp write SetFOnKeyUp;
+    property OnKeyUp: TKeyEvent read FPointerOnKeyUp write FPointerOnKeyUp;
     property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
     property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
     property OnMouseWheel: TMouseWheelEvent read GetFOnMouseWheel write SetFOnMouseWheel;
     property OnMouseMove: TMouseMoveEvent read GetFOnMouseMove write SetFOnMouseMove;
     property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
     property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
-    property OnChangeTracking: TNotifyEvent read GetFOnChangeTracking write SetFOnChangeTracking;
-    property OnEnter: TNotifyEvent read GetFOnEnter write SetFOnEnter;
-    property OnExit: TNotifyEvent read GetFOnExit write SetFOnExit;
-    property OnTyping: TNotifyEvent read FPointerOnTyping write FPointerOnTyping;
+    property OnChangeTracking: TNotifyEvent read FPointerOnChangeTracking write FPointerOnChangeTracking;
+    property OnEnter: TNotifyEvent read FPointerOnEnter write FPointerOnEnter;
+    property OnExit: TNotifyEvent read FPointerOnExit write FPointerOnExit;
   end;
 
 implementation
@@ -162,14 +163,48 @@ implementation
 uses
   Input;
 
+procedure TLongInput.AnimationLabelTextPromptOnEnter;
+begin
+  if FTextPromptAnimation then
+  begin
+    FLabel.AnimateFloat('Margins.Top', -19, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabel.AnimateFloat('Margins.Left', 2, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size - 2, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+    FLabel.AnimateColor('TextSettings.FontColor', FSelectedTheme, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+  end
+  else
+    FLabel.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+end;
+
+procedure TLongInput.AnimationLabelTextPromptOnExit;
+begin
+  if FTextPromptAnimation and Self.Text.Equals('') then
+  begin
+    FLabel.AnimateFloat('Margins.Top', 8, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabel.AnimateFloat('Margins.Left', 10, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size, 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+  end;
+  if not FInvalid then
+    FLabel.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0.25, TAnimationType.InOut,
+      TInterpolationType.Circular);
+end;
+
 procedure TLongInput.OnEditEnter(Sender: TObject);
 begin
+  AnimationLabelTextPromptOnEnter;
+
   if Assigned(FPointerOnEnter) then
     FPointerOnEnter(Sender);
 end;
 
 procedure TLongInput.OnEditExit(Sender: TObject);
 begin
+  AnimationLabelTextPromptOnExit;
+
   if Assigned(FPointerOnExit) then
     FPointerOnExit(Sender);
 end;
@@ -192,11 +227,6 @@ begin
   end;
   if Assigned(FPointerOnKeyUp) then
     FPointerOnKeyUp(Sender, Key, KeyChar, Shift);
-end;
-
-procedure TLongInput.SetFOnChangeTracking(const Value: TNotifyEvent);
-begin
-  FPointerOnChangeTracking := Value;
 end;
 
 procedure TLongInput.SetFOnClick(const Value: TNotifyEvent);
@@ -235,9 +265,20 @@ begin
   Result := FMemo.Caret;
 end;
 
+function TLongInput.GetFCharacterCounter: Boolean;
+begin
+  Result := FLabelLengthCount.Visible;
+end;
+
 procedure TLongInput.SetFCaret(const Value: TCaret);
 begin
   FMemo.Caret := Value;
+end;
+
+procedure TLongInput.SetFCharacterCounter(const Value: Boolean);
+begin
+  FLabelLengthCount.Visible := Value;
+  RefreshCharacterCounter;
 end;
 
 function TLongInput.GetFCursor: TCursor;
@@ -296,16 +337,12 @@ end;
 procedure TLongInput.SetFMaxLength(const Value: Integer);
 begin
   FMemo.MaxLength := Value;
+  RefreshCharacterCounter;
 end;
 
 function TLongInput.GetFMaxLength: Integer;
 begin
   Result := FMemo.MaxLength;
-end;
-
-function TLongInput.GetFOnChangeTracking: TNotifyEvent;
-begin
-  Result := FPointerOnChangeTracking;
 end;
 
 function TLongInput.GetFOnClick: TNotifyEvent;
@@ -323,26 +360,6 @@ begin
   Result := FMemo.OnDblClick;
 end;
 
-procedure TLongInput.SetFOnEnter(const Value: TNotifyEvent);
-begin
-  FPointerOnEnter := Value;
-end;
-
-function TLongInput.GetFOnEnter: TNotifyEvent;
-begin
-  Result := FPointerOnEnter;
-end;
-
-procedure TLongInput.SetFOnExit(const Value: TNotifyEvent);
-begin
-  FPointerOnExit := Value;
-end;
-
-function TLongInput.GetFOnExit: TNotifyEvent;
-begin
-  Result := FPointerOnExit;
-end;
-
 procedure TLongInput.SetFOnKeyDown(const Value: TKeyEvent);
 begin
   FMemo.OnKeyDown := Value;
@@ -351,16 +368,6 @@ end;
 function TLongInput.GetFOnKeyDown: TKeyEvent;
 begin
   Result := FMemo.OnKeyDown;
-end;
-
-procedure TLongInput.SetFOnKeyUp(const Value: TKeyEvent);
-begin
-  FPointerOnKeyUp := Value;
-end;
-
-function TLongInput.GetFOnKeyUp: TKeyEvent;
-begin
-  Result := FPointerOnKeyUp;
 end;
 
 procedure TLongInput.SetFOnMouseDown(const Value: TMouseEvent);
@@ -438,6 +445,32 @@ end;
 procedure TLongInput.SetFText(const Value: String);
 begin
   FMemo.Text := Value;
+  if not FMemo.Text.Equals('') then
+  begin
+    if FTextPromptAnimation then
+    begin
+      FLabel.AnimateFloat('Margins.Top', -19, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabel.AnimateFloat('Margins.Left', 2, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size - 2, 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+    end;
+    if FInvalid then
+      FLabel.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+  end
+  else
+  begin
+    if FTextPromptAnimation then
+    begin
+      FLabel.AnimateFloat('Margins.Top', 8, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabel.AnimateFloat('Margins.Left', 10, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size, 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+    end;
+    if not FInvalid then
+      FLabel.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
+  end;
 end;
 
 function TLongInput.GetFTag: NativeInt;
@@ -463,6 +496,7 @@ end;
 procedure TLongInput.SetTextSettings(const Value: TTextSettings);
 begin
   FMemo.TextSettings := Value;
+  FChangeTextSettings := True;
 end;
 
 function TLongInput.GetTextSettings: TTextSettings;
@@ -485,7 +519,15 @@ end;
 procedure TLongInput.Paint;
 begin
   inherited;
-  FLabel.TextSettings := FMemo.TextSettings;
+
+  if FChangeTextSettings then
+  begin
+    FLabel.TextSettings := FMemo.TextSettings;
+    FLabel.TextSettings.FontColor := TAlphaColor($FF999999);
+    if not Self.Text.Equals('') and FTextPromptAnimation then
+      FLabel.TextSettings.Font.Size := FLabel.TextSettings.Font.Size - 2;
+    FChangeTextSettings := False;
+  end;
 end;
 
 { Repaint }
@@ -495,15 +537,31 @@ begin
   Repaint;
 end;
 
+procedure TLongInput.RefreshCharacterCounter;
+begin
+  FLabelLengthCount.Text := FMemo.Text.Length.ToString + '/' + FMemo.MaxLength.ToString;
+end;
+
 procedure TLongInput.EventOnChangeTracking(Sender: TObject);
 begin
-  FMemoOnChangeTracking(Sender);
+  if not FTextPromptAnimation then
+  begin
+    if FMemo.Text.Equals('') then
+      FLabel.Visible := True
+    else
+      FLabel.Visible := False;
+  end
+  else
+  begin
+    if not FLabel.Visible then
+      FLabel.Visible := True;
+  end;
+
+  if Self.CharacterCounter then
+    RefreshCharacterCounter;
 
   if Assigned(FPointerOnChangeTracking) then
     FPointerOnChangeTracking(Sender);
-
-  if Assigned(FPointerOnTyping) then
-    FPointerOnTyping(Sender);
 end;
 
 procedure TLongInput.FMemoOnApplyStyleLookup(Sender: TObject);
@@ -525,14 +583,6 @@ begin
   end;
 end;
 
-procedure TLongInput.FMemoOnChangeTracking(Sender: TObject);
-begin
-  if FMemo.Text.Equals('') then
-    FLabel.Visible := True
-  else
-    FLabel.Visible := False;
-end;
-
 { Public declarations }
 
 constructor TLongInput.Create(AOwner: TComponent);
@@ -540,6 +590,9 @@ begin
   inherited;
   Self.Width := 400;
   Self.Height := 120;
+
+  FTextPromptAnimation := True;
+  FChangeTextSettings := True;
 
   FDarkTheme := TAlphaColor($FF2F2F2F);
   FLightTheme := TAlphaColor($FFFFFFFF);
@@ -580,18 +633,39 @@ begin
   FMemo.OnChangeTracking := EventOnChangeTracking;
 
   { Label }
+
   FLabel := TLabel.Create(Self);
-  FMemo.AddObject(FLabel);
+  FBackground.AddObject(FLabel);
   FLabel.Align := TAlignLayout.Client;
   FLabel.HitTest := False;
+  FLabel.Margins.Top := 8;
+  FLabel.Margins.Bottom := 8;
+  FLabel.Margins.Left := 10;
+  FLabel.Margins.Right := 10;
   FLabel.StyledSettings := [];
   FLabel.TextSettings.Font.Size := 14;
   FLabel.TextSettings.Font.Family := 'SF Pro Display';
-  FLabel.TextSettings.FontColor := TAlphaColor($FF323232);
   FLabel.TextSettings.VertAlign := TTextAlign.Leading;
   FLabel.SetSubComponent(True);
   FLabel.Stored := False;
-  FLabel.Opacity := 0.5;
+  FLabel.TextSettings.FontColor := TAlphaColor($FF999999);
+
+  { FLabelLengthCount }
+
+  FLabelLengthCount := TLabel.Create(Self);
+  FBackground.AddObject(FLabelLengthCount);
+  FLabelLengthCount.Align := TAlignLayout.Bottom;
+  FLabelLengthCount.HitTest := False;
+  FLabelLengthCount.Margins.Bottom := -19;
+  FLabelLengthCount.StyledSettings := [];
+  FLabelLengthCount.TextSettings.Font.Size := 12;
+  FLabelLengthCount.TextSettings.Font.Family := 'SF Pro Display';
+  FLabelLengthCount.TextSettings.HorzAlign := TTextAlign.Trailing;
+  FLabelLengthCount.SetSubComponent(True);
+  FLabelLengthCount.Stored := False;
+  FLabelLengthCount.TextSettings.FontColor := TAlphaColor($FF323232);
+  FLabelLengthCount.Opacity := 0.5;
+  FLabelLengthCount.Visible := False;
 
   { Initial settings }
   SetFCursor(crIBeam);
@@ -599,6 +673,8 @@ end;
 
 destructor TLongInput.Destroy;
 begin
+  if Assigned(FLabelLengthCount) then
+    FLabelLengthCount.Free;
   if Assigned(FLabel) then
     FLabel.Free;
   if Assigned(FMemo) then

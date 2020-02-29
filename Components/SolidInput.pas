@@ -15,7 +15,6 @@ type
     FShadow: TShadowEffect;
     FStrokeGradientDefocus: TGradient;
     FFocusEffect: TGlowEffect;
-    FSelectedTheme: TAlphaColor;
 
     { Events settings }
     procedure OnEditEnter(Sender: TObject); override;
@@ -31,6 +30,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function ValidateText(): Boolean;
+    procedure Clear; override;
     procedure Select();
     procedure Deselect();
   published
@@ -59,7 +59,7 @@ begin
   FFocusEffect.Enabled := true;
   FFocusEffect.GlowColor := FSelectedTheme;
   FFocusEffect.Opacity := 0;
-  FFocusEffect.Softness := 0.2;
+  FFocusEffect.Softness := 0.1;
   FFocusEffect.SetSubComponent(true);
   FFocusEffect.Stored := false;
 
@@ -134,6 +134,13 @@ end;
 procedure TSolidInput.SetFText(const Value: String);
 begin
   inherited;
+  if not Self.Text.Equals('') then
+    HideEffectValidation();
+end;
+
+procedure TSolidInput.Clear;
+begin
+  inherited;
   HideEffectValidation();
 end;
 
@@ -141,6 +148,9 @@ function TSolidInput.ValidateText: Boolean;
 begin
   if not Self.Validate then
   begin
+    if FTextPromptAnimation then
+      FLabelTextPrompt.AnimateColor('TextSettings.FontColor', SOLID_ERROR_COLOR, 0.25, TAnimationType.InOut,
+        TInterpolationType.Circular);
     FFocusEffect.GlowColor := SOLID_ERROR_COLOR;
     FFocusEffect.AnimateFloat('Opacity', 1, 0.2);
   end;
@@ -152,6 +162,9 @@ procedure TSolidInput.HideEffectValidation;
 begin
   if FFocusEffect.GlowColor = SOLID_ERROR_COLOR then
   begin
+    if FTextPromptAnimation then
+      FLabelTextPrompt.AnimateColor('TextSettings.FontColor', TAlphaColor($FF999999), 0, TAnimationType.InOut,
+        TInterpolationType.Circular);
     FFocusEffect.AnimateFloat('Opacity', 0, 0.2);
     FFocusEffect.GlowColor := FSelectedTheme;
   end;

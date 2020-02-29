@@ -1,0 +1,53 @@
+package ComponentesCustomizados;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  fmx;
+
+contains
+  TransparentInput in 'Components\TransparentInput.pas',
+  Input in 'BaseComponents\Input.pas',
+  SolidInput in 'Components\SolidInput.pas',
+  SolidComboBox in 'Components\SolidComboBox.pas',
+  Card in 'BaseComponents\Card.pas',
+  Dialog in 'Components\Dialog.pas',
+  TransparentComboBox in 'Components\TransparentComboBox.pas',
+  CheckField in 'BaseComponents\CheckField.pas',
+  SolidRectangleButton in 'Components\SolidRectangleButton.pas',
+  TransparentRectangleButton in 'BaseComponents\TransparentRectangleButton.pas',
+  ColorClass in 'DesignsComponents\ColorClass.pas',
+  TransparentCircleIconButton in 'BaseComponents\TransparentCircleIconButton.pas',
+  SolidCircleIconButton in 'Components\SolidCircleIconButton.pas',
+  Loading in 'BaseComponents\Loading.pas',
+  TransparentAlert in 'BaseComponents\TransparentAlert.pas',
+  TransparentRectangleIconButton in 'BaseComponents\TransparentRectangleIconButton.pas',
+  LongInput in 'BaseComponents\LongInput.pas';
+
+end.
