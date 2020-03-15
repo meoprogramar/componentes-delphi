@@ -169,6 +169,7 @@
         <DCCReference Include="Components\SolidLongInput.pas"/>
         <DCCReference Include="Components\RadioField.pas"/>
         <DCCReference Include="BaseComponents\SwitchField.pas"/>
+        <DCCReference Include="BaseComponents\Step.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

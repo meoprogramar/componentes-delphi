@@ -52,6 +52,7 @@ contains
   TransparentLongInput in 'Components\TransparentLongInput.pas',
   SolidLongInput in 'Components\SolidLongInput.pas',
   RadioField in 'Components\RadioField.pas',
-  SwitchField in 'BaseComponents\SwitchField.pas';
+  SwitchField in 'BaseComponents\SwitchField.pas',
+  Step in 'BaseComponents\Step.pas';
 
 end.

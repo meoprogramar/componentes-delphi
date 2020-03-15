@@ -1,0 +1,284 @@
+unit Step;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, FMX.Objects,
+  FMX.StdCtrls, System.UITypes, ColorClass, FMX.Graphics, FMX.Layouts;
+
+type
+  TStep = class(TControl)
+  private
+    procedure ApplyColorChanges();
+
+    function GetFButtonClass: TColorClass;
+    function GetFIsChecked: Boolean;
+    function GetFNumberStep: Integer;
+    function GetFTag: NativeInt;
+    function GetFText: String;
+    function GetFTextSettings: TTextSettings;
+    procedure SetFButtonClass(const Value: TColorClass);
+    procedure SetFIsChecked(const Value: Boolean);
+    procedure SetFNumberStep(const Value: Integer);
+    procedure SetFTag(const Value: NativeInt);
+    procedure SetFText(const Value: String);
+    procedure SetFTextSettings(const Value: TTextSettings);
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FPointerOnChange: TNotifyEvent;
+
+    FStepLayoutCircle: TLayout;
+    FStepCircle: TCircle;
+    FStepCircleSelected: TCircle;
+    FStepNumber: TLabel;
+    FStepText: TLabel;
+
+    FColorMain: TAlphaColor;
+    FIsChecked: Boolean;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    { Published declarations }
+    property Cursor;
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+    property HitTest;
+
+    { Additional properties }
+    property ButtonClass: TColorClass read GetFButtonClass write SetFButtonClass;
+    property NumberStep: Integer read GetFNumberStep write SetFNumberStep;
+    property Text: String read GetFText write SetFText;
+    property TextSettings: TTextSettings read GetFTextSettings write SetFTextSettings;
+    property IsChecked: Boolean read GetFIsChecked write SetFIsChecked;
+    property Tag: NativeInt read GetFTag write SetFTag;
+
+    { Events }
+    property OnPainting;
+    property OnPaint;
+    property OnResize;
+
+    { Mouse events }
+    property OnChange: TNotifyEvent read FPointerOnChange write FPointerOnChange;
+    property OnClick;
+    property OnDblClick;
+    property OnMouseDown;
+    property OnMouseUp;
+    property OnMouseWheel;
+    property OnMouseMove;
+    property OnMouseEnter;
+    property OnMouseLeave;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TStep]);
+end;
+
+{ TStep }
+
+constructor TStep.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.Width := 200;
+  Self.Height := 40;
+
+  FStepLayoutCircle := TLayout.Create(Self);
+  Self.AddObject(FStepLayoutCircle);
+  FStepLayoutCircle.Align := TAlignLayout.Left;
+  FStepLayoutCircle.HitTest := False;
+  FStepLayoutCircle.SetSubComponent(True);
+  FStepLayoutCircle.Stored := False;
+  FStepLayoutCircle.Width := 40;
+
+  FStepCircle := TCircle.Create(Self);
+  FStepLayoutCircle.AddObject(FStepCircle);
+  FStepCircle.Align := TAlignLayout.Left;
+  FStepCircle.HitTest := False;
+  FStepCircle.SetSubComponent(True);
+  FStepCircle.Stored := False;
+  FStepCircle.Stroke.Kind := TBrushKind.None;
+  FStepCircle.Width := 40;
+  FStepCircle.Height := 40;
+  FStepCircle.Fill.Color := SOLID_PRIMARY_COLOR;
+
+  FStepCircleSelected := TCircle.Create(Self);
+  FStepLayoutCircle.AddObject(FStepCircleSelected);
+  FStepCircleSelected.Align := TAlignLayout.Left;
+  FStepCircleSelected.HitTest := False;
+  FStepCircleSelected.SetSubComponent(True);
+  FStepCircleSelected.Stored := False;
+  FStepCircleSelected.Stroke.Kind := TBrushKind.None;
+  FStepCircleSelected.Width := 40;
+  FStepCircleSelected.Height := 40;
+  FStepCircleSelected.Margins.Top := -10;
+  FStepCircleSelected.Margins.Bottom := -10;
+  FStepCircleSelected.Fill.Color := TRANSPARENT_PRIMARY_COLOR;
+
+  FStepNumber := TLabel.Create(Self);
+  FStepCircle.AddObject(FStepNumber);
+  FStepNumber.Align := TAlignLayout.Client;
+  FStepNumber.HitTest := False;
+  FStepNumber.StyledSettings := [];
+  FStepNumber.TextSettings.Font.Size := 14;
+  FStepNumber.TextSettings.Font.Family := 'SF Pro Display';
+  FStepNumber.TextSettings.HorzAlign := TTextAlign.Center;
+  FStepNumber.SetSubComponent(True);
+  FStepNumber.Stored := False;
+  FStepNumber.TextSettings.FontColor := SOLID_WHITE;
+
+  FStepText := TLabel.Create(Self);
+  Self.AddObject(FStepText);
+  FStepText.Align := TAlignLayout.Client;
+  FStepText.HitTest := False;
+  FStepText.Margins.Left := 10;
+  FStepText.StyledSettings := [];
+  FStepText.TextSettings.Font.Size := 10;
+  FStepText.TextSettings.Font.Family := 'SF Pro Display';
+  FStepText.TextSettings.Font.Style := [TFontStyle.fsBold];
+  FStepText.SetSubComponent(True);
+  FStepText.Stored := False;
+  FStepText.TextSettings.FontColor := SOLID_PRIMARY_COLOR;
+
+  Self.NumberStep := 1;
+  Self.FColorMain := SOLID_PRIMARY_COLOR;
+  Self.IsChecked := True;
+end;
+
+destructor TStep.Destroy;
+begin
+  if Assigned(FStepText) then
+    FStepText.Free;
+  if Assigned(FStepNumber) then
+    FStepNumber.Free;
+  if Assigned(FStepCircle) then
+    FStepCircle.Free;
+  inherited;
+end;
+
+function TStep.GetFButtonClass: TColorClass;
+begin
+  if FColorMain = SOLID_PRIMARY_COLOR then
+    Result := TColorClass.Primary
+  else if FColorMain = SOLID_SECONDARY_COLOR then
+    Result := TColorClass.Secondary
+  else if FColorMain = SOLID_ERROR_COLOR then
+    Result := TColorClass.Error
+  else if FColorMain = SOLID_WARNING_COLOR then
+    Result := TColorClass.Warning
+  else if FColorMain = SOLID_SUCCESS_COLOR then
+    Result := TColorClass.Success
+  else if FColorMain = SOLID_BLACK then
+    Result := TColorClass.Normal
+  else
+    Result := TColorClass.Custom;
+end;
+
+function TStep.GetFIsChecked: Boolean;
+begin
+  Result := FIsChecked;
+end;
+
+function TStep.GetFNumberStep: Integer;
+begin
+  Result := StrToInt(FStepNumber.Text);
+end;
+
+function TStep.GetFTag: NativeInt;
+begin
+  Result := TControl(Self).Tag;
+end;
+
+function TStep.GetFText: String;
+begin
+  Result := FStepText.Text;
+end;
+
+function TStep.GetFTextSettings: TTextSettings;
+begin
+  Result := FStepText.TextSettings;
+end;
+
+procedure TStep.SetFButtonClass(const Value: TColorClass);
+begin
+  if Value = TColorClass.Primary then
+    FColorMain := SOLID_PRIMARY_COLOR
+  else if Value = TColorClass.Secondary then
+    FColorMain := SOLID_SECONDARY_COLOR
+  else if Value = TColorClass.Error then
+    FColorMain := SOLID_ERROR_COLOR
+  else if Value = TColorClass.Warning then
+    FColorMain := SOLID_WARNING_COLOR
+  else if Value = TColorClass.Normal then
+    FColorMain := SOLID_BLACK
+  else if Value = TColorClass.Success then
+    FColorMain := SOLID_SUCCESS_COLOR
+  else
+    FColorMain := TAlphaColor($FF323230);
+
+  ApplyColorChanges();
+end;
+
+procedure TStep.ApplyColorChanges;
+begin
+  if Self.IsChecked then
+  begin
+    FStepCircle.Fill.Color := FColorMain;
+    FStepText.TextSettings.FontColor := FColorMain;
+    FStepNumber.TextSettings.FontColor := SOLID_WHITE;
+  end
+  else
+  begin
+    FStepCircle.Fill.Color := TAlphaColor($FFE5E5E5);
+    FStepText.TextSettings.FontColor := TAlphaColor($FF919191);
+    FStepNumber.TextSettings.FontColor := TAlphaColor($FF919191);
+  end;
+end;
+
+procedure TStep.SetFIsChecked(const Value: Boolean);
+begin
+  FIsChecked := Value;
+  ApplyColorChanges();
+
+  if Assigned(FPointerOnChange) then
+    FPointerOnChange(Self);
+end;
+
+procedure TStep.SetFNumberStep(const Value: Integer);
+begin
+  FStepNumber.Text := Value.ToString;
+end;
+
+procedure TStep.SetFTag(const Value: NativeInt);
+begin
+  TControl(Self).Tag := Value;
+end;
+
+procedure TStep.SetFText(const Value: String);
+begin
+  FStepText.Text := Value;
+end;
+
+procedure TStep.SetFTextSettings(const Value: TTextSettings);
+begin
+  FStepText.TextSettings := Value;
+end;
+
+end.

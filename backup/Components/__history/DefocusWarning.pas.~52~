@@ -1,0 +1,184 @@
+unit DefocusWarning;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, FMX.Forms, Card;
+
+type
+  TDefocusWarning = class(TCard)
+  private
+    procedure OnClickFDefocusBackgroundCard(Sender: TObject);
+    function GetFCardAlign: TAlignLayout;
+    function GetFCardHeight: Single;
+    function GetFCardMargins: TBounds;
+    function GetFCardWidth: Single;
+    procedure SetFCardAlign(const Value: TAlignLayout);
+    procedure SetFCardHeight(const Value: Single);
+    procedure SetFCardMargins(const Value: TBounds);
+    procedure SetFCardWidth(const Value: Single);
+    function GetFDefocusBackgroundCloseOnClick: Boolean;
+    function GetFDefocusBackgroundColor: TAlphaColor;
+    function GetFDefocusBackgroundOpacity: TAlphaColor;
+    procedure SetFDefocusBackgroundCloseOnClick(const Value: Boolean);
+    procedure SetFDefocusBackgroundColor(const Value: TAlphaColor);
+    procedure SetFDefocusBackgroundOpacity(const Value: TAlphaColor);
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FDefocusBackgroundCard: TRectangle;
+    FDefocusBackgroundCloseOnClick: Boolean;
+
+    procedure Paint; override;
+    procedure Resize; override;
+    procedure Painting; override;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    { Published declarations }
+    { Additional properties }
+    property CardAlign: TAlignLayout read GetFCardAlign write SetFCardAlign;
+    property CardMargins: TBounds read GetFCardMargins write SetFCardMargins;
+    property CardHeight: Single read GetFCardHeight write SetFCardHeight;
+    property CardWidth: Single read GetFCardWidth write SetFCardWidth;
+    property DefocusBackgroundColor: TAlphaColor read GetFDefocusBackgroundColor write SetFDefocusBackgroundColor;
+    property DefocusBackgroundOpacity: TAlphaColor read GetFDefocusBackgroundOpacity write SetFDefocusBackgroundOpacity;
+    property DefocusBackgroundCloseOnClick: Boolean read GetFDefocusBackgroundCloseOnClick
+      write SetFDefocusBackgroundCloseOnClick default True;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TDefocusWarning]);
+end;
+
+{ TDefocusWarning }
+
+constructor TDefocusWarning.Create(AOwner: TComponent);
+begin
+  inherited;
+  Align := TAlignLayout.Client;
+
+  { BackgroundCard }
+  FBackgroundCard.Align := TAlignLayout.Center;
+
+  { DefocusBackgroundCard }
+  FDefocusBackgroundCard := TRectangle.Create(Self);
+  Self.AddObject(FDefocusBackgroundCard);
+  FDefocusBackgroundCard.Align := TAlignLayout.Client;
+  FDefocusBackgroundCard.Stroke.Kind := TBrushKind.None;
+  FDefocusBackgroundCard.Fill.Color := TAlphaColor($FF000000);
+  FDefocusBackgroundCard.Opacity := 0.4;
+  FDefocusBackgroundCard.SetSubComponent(True);
+  FDefocusBackgroundCard.Stored := False;
+  FDefocusBackgroundCard.SendToBack;
+  if FDefocusBackgroundCloseOnClick then
+    FDefocusBackgroundCard.OnClick := OnClickFDefocusBackgroundCard;
+end;
+
+destructor TDefocusWarning.Destroy;
+begin
+  if Assigned(FDefocusBackgroundCard) then
+    FDefocusBackgroundCard.Free;
+  inherited;
+end;
+
+procedure TDefocusWarning.OnClickFDefocusBackgroundCard(Sender: TObject);
+begin
+  Self.Close;
+end;
+
+function TDefocusWarning.GetFCardAlign: TAlignLayout;
+begin
+  Result := FBackgroundCard.Align;
+end;
+
+function TDefocusWarning.GetFCardHeight: Single;
+begin
+  Result := FBackgroundCard.Height;
+end;
+
+function TDefocusWarning.GetFCardMargins: TBounds;
+begin
+  Result := FBackgroundCard.Margins;
+end;
+
+function TDefocusWarning.GetFCardWidth: Single;
+begin
+  Result := FBackgroundCard.Width;
+end;
+
+function TDefocusWarning.GetFDefocusBackgroundCloseOnClick: Boolean;
+begin
+  Result := FDefocusBackgroundCloseOnClick;
+end;
+
+function TDefocusWarning.GetFDefocusBackgroundColor: TAlphaColor;
+begin
+  Result := FDefocusBackgroundCard.Fill.Color;
+end;
+
+function TDefocusWarning.GetFDefocusBackgroundOpacity: TAlphaColor;
+begin
+  Result := FDefocusBackgroundCard.Opacity;
+end;
+
+procedure TDefocusWarning.Paint;
+begin
+  inherited;
+end;
+
+procedure TDefocusWarning.Painting;
+begin
+  inherited;
+end;
+
+procedure TDefocusWarning.Resize;
+begin
+  inherited;
+end;
+
+procedure TDefocusWarning.SetFCardAlign(const Value: TAlignLayout);
+begin
+  FBackgroundCard.Align := Value;
+end;
+
+procedure TDefocusWarning.SetFCardHeight(const Value: Single);
+begin
+  FBackgroundCard.Height := Value;
+end;
+
+procedure TDefocusWarning.SetFCardMargins(const Value: TBounds);
+begin
+  FBackgroundCard.Margins := Value;
+end;
+
+procedure TDefocusWarning.SetFCardWidth(const Value: Single);
+begin
+  FBackgroundCard.Width := Value;
+end;
+
+procedure TDefocusWarning.SetFDefocusBackgroundCloseOnClick(const Value: Boolean);
+begin
+  FDefocusBackgroundCloseOnClick := Value;
+end;
+
+procedure TDefocusWarning.SetFDefocusBackgroundColor(const Value: TAlphaColor);
+begin
+  FDefocusBackgroundCard.Fill.Color := Value;
+end;
+
+procedure TDefocusWarning.SetFDefocusBackgroundOpacity(const Value: TAlphaColor);
+begin
+  FDefocusBackgroundCard.Opacity := Value;
+end;
+
+end.

@@ -295,7 +295,7 @@ end;
 
 procedure TCheckField.OnCheckFieldMouseEnter(Sender: TObject);
 begin
-  FCircleSelect.AnimateFloat('Opacity', 0.15, 0.1);
+  FCircleSelect.AnimateFloat('Opacity', 0.15, 0.2);
 
   if Assigned(FPointerOnMouseEnter) then
     FPointerOnMouseEnter(Sender);
@@ -303,7 +303,7 @@ end;
 
 procedure TCheckField.OnCheckFieldMouseExit(Sender: TObject);
 begin
-  FCircleSelect.AnimateFloat('Opacity', 0, 0.1);
+  FCircleSelect.AnimateFloat('Opacity', 0, 0.2);
 
   if Assigned(FPointerOnMouseExit) then
     FPointerOnMouseExit(Sender);

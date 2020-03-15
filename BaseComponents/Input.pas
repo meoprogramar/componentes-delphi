@@ -105,6 +105,8 @@ type
     procedure SetFIconData(const Value: TPathData);
     function GetFIconSize: Single;
     procedure SetFIconSize(const Value: Single);
+    function GetFCharCase: TEditCharCase;
+    procedure SetFCharCase(const Value: TEditCharCase);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -146,6 +148,7 @@ type
     property IconPosition: TIconPosition read GetFIconPosition write SetFIconPosition;
     property TabNext: TControl read FTabNext write SetFTabNext;
     property Tag: NativeInt read GetFTag write SetFTag;
+    property CharCase: TEditCharCase read GetFCharCase write SetFCharCase;
 
     { Events }
     property OnPainting;
@@ -179,7 +182,7 @@ procedure TInput.AnimationLabelTextPromptOnEnter;
 begin
   if FTextPromptAnimation then
   begin
-    FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 25, 0.25, TAnimationType.InOut,
+    FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 23, 0.25, TAnimationType.InOut,
       TInterpolationType.Circular);
     FLabelTextPrompt.AnimateFloat('Margins.Left', 2, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
     FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size - 2, 0.25,
@@ -305,9 +308,19 @@ begin
   Result := FEdit.Caret;
 end;
 
+function TInput.GetFCharCase: TEditCharCase;
+begin
+  Result := FEdit.CharCase;
+end;
+
 procedure TInput.SetFCaret(const Value: TCaret);
 begin
   FEdit.Caret := Value;
+end;
+
+procedure TInput.SetFCharCase(const Value: TEditCharCase);
+begin
+  FEdit.CharCase := Value;
 end;
 
 function TInput.GetFCursor: TCursor;
@@ -367,6 +380,7 @@ end;
 procedure TInput.Clear;
 begin
   Self.Text := '';
+  FInvalid := False;
 end;
 
 function TInput.Validate: Boolean;
@@ -535,7 +549,7 @@ begin
   begin
     if FTextPromptAnimation then
     begin
-      FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 25, 0, TAnimationType.InOut,
+      FLabelTextPrompt.AnimateFloat('Margins.Top', -(Self.Height) - 23, 0, TAnimationType.InOut,
         TInterpolationType.Circular);
       FLabelTextPrompt.AnimateFloat('Margins.Left', 2, 0, TAnimationType.InOut, TInterpolationType.Circular);
       FLabelTextPrompt.AnimateFloat('TextSettings.Font.Size', FEdit.TextSettings.Font.Size - 2, 0, TAnimationType.InOut,
@@ -691,7 +705,7 @@ begin
   FEdit.OnChangeTracking := OnEditChangeTracking;
 
   FLabelTextPrompt := TLabel.Create(Self);
-  Self.AddObject(FLabelTextPrompt);
+  FBackground.AddObject(FLabelTextPrompt);
   FLabelTextPrompt.Align := TAlignLayout.Client;
   FLabelTextPrompt.HitTest := False;
   FLabelTextPrompt.Margins.Left := 10;

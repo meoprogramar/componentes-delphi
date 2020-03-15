@@ -1,0 +1,95 @@
+unit TransparentAppleEdit;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects, AppleEdit;
+
+type
+  TTransparentAppleEdit = class(TAppleEdit)
+  private
+    function GetFSelectedColor: TAlphaColor;
+    procedure SetFSelectedColor(const Value: TAlphaColor);
+    { Private declarations }
+  protected
+    { Protected declarations }
+    FSelectedTheme: TAlphaColor;
+
+    { Events settings }
+    procedure OnEditEnter(Sender: TObject); override;
+    procedure OnEditExit(Sender: TObject); override;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    function ValidateText(): Boolean;
+  published
+    { Published declarations }
+    property SelectedColor: TAlphaColor read GetFSelectedColor write SetFSelectedColor;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TTransparentAppleEdit]);
+end;
+
+{ Protected declarations }
+
+{ TTransparentAppleEdit }
+
+constructor TTransparentAppleEdit.Create(AOwner: TComponent);
+begin
+  inherited;
+  FSelectedTheme := TAlphaColor($C8006CD0);
+
+  FBackground.Stroke.Kind := TBrushKind.Solid;
+  FBackground.Stroke.Color := FSelectedTheme;
+  FBackground.Stroke.Thickness := 0;
+end;
+
+destructor TTransparentAppleEdit.Destroy;
+begin
+  inherited;
+end;
+
+procedure TTransparentAppleEdit.SetFSelectedColor(const Value: TAlphaColor);
+begin
+  FBackground.Stroke.Color := Value;
+end;
+
+function TTransparentAppleEdit.GetFSelectedColor: TAlphaColor;
+begin
+  Result := FBackground.Stroke.Color;
+end;
+
+procedure TTransparentAppleEdit.OnEditEnter(Sender: TObject);
+begin
+  FBackground.Stroke.Color := FSelectedTheme;
+  FBackground.AnimateFloat('Stroke.Thickness', 1, 0.2);
+  inherited;
+end;
+
+procedure TTransparentAppleEdit.OnEditExit(Sender: TObject);
+begin
+  FBackground.AnimateFloat('Stroke.Thickness', 0, 0.2);
+  inherited;
+end;
+
+function TTransparentAppleEdit.ValidateText: Boolean;
+begin
+  if not Self.Validate then
+  begin
+    FBackground.Stroke.Color := TAlphaColor($FFFF2929);
+    if FBackground.Stroke.Thickness <> 1 then
+      FBackground.AnimateFloat('Stroke.Thickness', 1, 0.2);
+  end;
+  Result := Self.Validate;
+end;
+
+end.

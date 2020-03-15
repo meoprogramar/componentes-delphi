@@ -20,6 +20,8 @@ type
     procedure AnimationLabelTextPromptOnEnter;
     procedure AnimationLabelTextPromptOnExit;
     procedure RefreshCharacterCounter;
+    function GetFCharCase: TEditCharCase;
+    procedure SetFCharCase(const Value: TEditCharCase);
   protected
     { Protected declarations }
     FPointerOnChangeTracking: TNotifyEvent;
@@ -136,6 +138,7 @@ type
     property CharacterCounter: Boolean read GetFCharacterCounter write SetFCharacterCounter;
     property TabNext: TControl read FTabNext write SetFTabNext;
     property Tag: NativeInt read GetFTag write SetFTag;
+    property CharCase: TEditCharCase read GetFCharCase write SetFCharCase;
 
     { Events }
     property OnPainting;
@@ -167,7 +170,7 @@ procedure TLongInput.AnimationLabelTextPromptOnEnter;
 begin
   if FTextPromptAnimation then
   begin
-    FLabel.AnimateFloat('Margins.Top', -19, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
+    FLabel.AnimateFloat('Margins.Top', -17, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
     FLabel.AnimateFloat('Margins.Left', 2, 0.25, TAnimationType.InOut, TInterpolationType.Circular);
     FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size - 2, 0.25, TAnimationType.InOut,
       TInterpolationType.Circular);
@@ -270,6 +273,11 @@ begin
   Result := FLabelLengthCount.Visible;
 end;
 
+function TLongInput.GetFCharCase: TEditCharCase;
+begin
+  Result := FMemo.CharCase;
+end;
+
 procedure TLongInput.SetFCaret(const Value: TCaret);
 begin
   FMemo.Caret := Value;
@@ -279,6 +287,11 @@ procedure TLongInput.SetFCharacterCounter(const Value: Boolean);
 begin
   FLabelLengthCount.Visible := Value;
   RefreshCharacterCounter;
+end;
+
+procedure TLongInput.SetFCharCase(const Value: TEditCharCase);
+begin
+  FMemo.CharCase := Value;
 end;
 
 function TLongInput.GetFCursor: TCursor;
@@ -449,7 +462,7 @@ begin
   begin
     if FTextPromptAnimation then
     begin
-      FLabel.AnimateFloat('Margins.Top', -19, 0, TAnimationType.InOut, TInterpolationType.Circular);
+      FLabel.AnimateFloat('Margins.Top', -17, 0, TAnimationType.InOut, TInterpolationType.Circular);
       FLabel.AnimateFloat('Margins.Left', 2, 0, TAnimationType.InOut, TInterpolationType.Circular);
       FLabel.AnimateFloat('TextSettings.Font.Size', FMemo.TextSettings.Font.Size - 2, 0, TAnimationType.InOut,
         TInterpolationType.Circular);

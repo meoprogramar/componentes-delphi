@@ -1,0 +1,474 @@
+unit RectangleButton;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FMX.Types, FMX.Controls, System.Types,
+  FMX.Objects, FMX.StdCtrls, System.UITypes, FMX.Graphics, FMX.Dialogs, System.Math,
+  System.Math.Vectors, FMX.Edit, FMX.Layouts, FMX.Effects;
+
+const
+  PRIMARY_COLOR: TAlphaColor = ($FF1867C0);
+  ERROR_COLOR: TAlphaColor = ($FFFF5252);
+  NORMAL_COLOR: TAlphaColor = ($FFF5F5F5);
+  SECONDARY_COLOR: TAlphaColor = ($FF5CBBF6);
+  WARNING_COLOR: TAlphaColor = ($FFFB8C00);
+  SUCCESS_COLOR: TAlphaColor = ($FF4CAF50);
+
+type
+  TIconPosition = (Left, Right);
+  TColorClass = (Primary, Error, Normal, Secondary, Warning, Success, Custom);
+
+  TRectangleButton = class(TControl)
+  private
+    { Private declarations }
+    FPointerOnMouseEnter: TNotifyEvent;
+    FPointerOnMouseExit: TNotifyEvent;
+    FPointerOnClick: TNotifyEvent;
+
+    procedure BackgroundOnEnter(Sender: TObject);
+    procedure BackgroundOnExit(Sender: TObject);
+    procedure BackgroundOnClick(Sender: TObject);
+    function GetFBackgroudColor: TAlphaColor;
+    function GetFCursor: TCursor;
+    function GetFElevation: Boolean;
+    function GetFHitTest: Boolean;
+    procedure SetFBackgroudColor(const Value: TAlphaColor);
+    procedure SetFCursor(const Value: TCursor);
+    procedure SetFElevation(const Value: Boolean);
+    procedure SetFHitTest(const Value: Boolean);
+    function GetFText: String;
+    procedure SetFText(const Value: String);
+    function GetFIconData: TPathData;
+    function GetFIconPosition: TIconPosition;
+    function GetFTextSettings: TTextSettings;
+    procedure SetFIconData(const Value: TPathData);
+    procedure SetFIconPosition(const Value: TIconPosition);
+    procedure SetFTextSettings(const Value: TTextSettings);
+    function GetFIconSize: Single;
+    procedure SetFIconSize(const Value: Single);
+    function GetFButtonClass: TColorClass;
+    procedure SetFButtonClass(const Value: TColorClass);
+    function GetFDark: Boolean;
+    procedure SetFDark(const Value: Boolean);
+  protected
+    { Protected declarations }
+    FBackgroundButton: TRectangle;
+    FBackgroundSelect: TRectangle;
+    FText: TLabel;
+    FIcon: TPath;
+    FShadow: TShadowEffect;
+
+    FContrastColor: TAlphaColor;
+
+    procedure Paint; override;
+    procedure Resize; override;
+    procedure Painting; override;
+  public
+    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    { Published declarations }
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Height;
+    property Opacity;
+    property Visible;
+    property Width;
+    property Size;
+    property Scale;
+    property Margins;
+    property Position;
+    property RotationAngle;
+    property RotationCenter;
+
+    { Additional properties }
+    property ButtonClass: TColorClass read GetFButtonClass write SetFButtonClass;
+    property Text: String read GetFText write SetFText;
+    property TextSettings: TTextSettings read GetFTextSettings write SetFTextSettings;
+    property IconData: TPathData read GetFIconData write SetFIconData;
+    property IconPosition: TIconPosition read GetFIconPosition write SetFIconPosition;
+    property IconSize: Single read GetFIconSize write SetFIconSize;
+    property Cursor: TCursor read GetFCursor write SetFCursor;
+    property HitTest: Boolean read GetFHitTest write SetFHitTest default True;
+    property Color: TAlphaColor read GetFBackgroudColor write SetFBackgroudColor;
+    property Elevation: Boolean read GetFElevation write SetFElevation;
+    property Dark: Boolean read GetFDark write SetFDark;
+
+    { Events }
+    property OnPainting;
+    property OnPaint;
+    property OnResize;
+
+    { Mouse events }
+    // property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
+    // property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
+    // property OnKeyDown: TKeyEvent read GetFOnKeyDown write SetFOnKeyDown;
+    // property OnKeyUp: TKeyEvent read GetFOnKeyUp write SetFOnKeyUp;
+    // property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
+    // property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
+    // property OnMouseWheel: TMouseWheelEvent read GetFOnMouseWheel write SetFOnMouseWheel;
+    // property OnMouseMove: TMouseMoveEvent read GetFOnMouseMove write SetFOnMouseMove;
+    // property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
+    // property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Componentes Customizados', [TRectangleButton]);
+end;
+
+{ TRectangleButton }
+
+procedure TRectangleButton.BackgroundOnClick(Sender: TObject);
+var
+  CircleEffect: TCircle;
+begin
+  CircleEffect := TCircle.Create(Self);
+  CircleEffect.HitTest := False;
+  CircleEffect.Parent := FBackgroundButton;
+  CircleEffect.Align := TAlignLayout.Center;
+  CircleEffect.Stroke.Kind := TBrushKind.None;
+  CircleEffect.Fill.Color := FContrastColor;
+  CircleEffect.SendToBack;
+  FBackgroundButton.ClipChildren := True;
+
+  CircleEffect.Height := 0;
+  CircleEffect.Width := 0;
+  CircleEffect.Opacity := 0.2;
+  CircleEffect.AnimateFloat('Height', FBackgroundButton.Width+(FBackgroundButton.Width*0.2), 0.4, TAnimationType.Out,
+    TInterpolationType.Circular);
+  CircleEffect.AnimateFloat('Width', FBackgroundButton.Width+(FBackgroundButton.Width*0.2), 0.4, TAnimationType.Out, TInterpolationType.Circular);
+  CircleEffect.AnimateFloat('Opacity', 0, 0.4);
+
+  if Assigned(FPointerOnClick) then
+    FPointerOnClick(Sender);
+end;
+
+procedure TRectangleButton.BackgroundOnEnter(Sender: TObject);
+begin
+  if Elevation then
+  begin
+    FShadow.AnimateFloat('Distance', 5, 0.2, TAnimationType.InOut);
+    FShadow.AnimateFloat('Softness', 0.3, 0.2, TAnimationType.InOut);
+    FBackgroundSelect.AnimateFloat('Opacity', 0.1, 0.1, TAnimationType.InOut);
+  end;
+
+  if Assigned(FPointerOnMouseEnter) then
+    FPointerOnMouseEnter(Sender);
+end;
+
+procedure TRectangleButton.BackgroundOnExit(Sender: TObject);
+begin
+  if Elevation then
+  begin
+    FShadow.AnimateFloat('Distance', 2, 0.2, TAnimationType.InOut);
+    FShadow.AnimateFloat('Softness', 0.15, 0.2, TAnimationType.InOut);
+    FBackgroundSelect.AnimateFloat('Opacity', 0, 0.1, TAnimationType.InOut);
+  end;
+
+  if Assigned(FPointerOnMouseExit) then
+    FPointerOnMouseExit(Sender);
+end;
+
+constructor TRectangleButton.Create(AOwner: TComponent);
+begin
+  inherited;
+  Self.Height := 40;
+  Self.Width := 150;
+
+  FContrastColor := TAlphaColor($FFFFFFFF);
+
+  FBackgroundButton := TRectangle.Create(Self);
+  Self.AddObject(FBackgroundButton);
+  FBackgroundButton.SetSubComponent(True);
+  FBackgroundButton.Stored := False;
+  FBackgroundButton.Align := TAlignLayout.Client;
+  FBackgroundButton.Stroke.Kind := TBrushKind.None;
+  FBackgroundButton.Fill.Color := TAlphaColor($FF1867C0);
+  FBackgroundButton.XRadius := 4;
+  FBackgroundButton.YRadius := 4;
+  FBackgroundButton.OnMouseEnter := BackgroundOnEnter;
+  FBackgroundButton.OnMouseLeave := BackgroundOnExit;
+  FBackgroundButton.OnClick := BackgroundOnClick;
+  FBackgroundButton.Cursor := crHandPoint;
+
+  FBackgroundSelect := TRectangle.Create(Self);
+  Self.AddObject(FBackgroundSelect);
+  FBackgroundSelect.Align := TAlignLayout.Client;
+  FBackgroundSelect.HitTest := False;
+  FBackgroundSelect.SetSubComponent(True);
+  FBackgroundSelect.Stored := False;
+  FBackgroundSelect.Stroke.Kind := TBrushKind.None;
+  FBackgroundSelect.Fill.Color := FContrastColor;
+  FBackgroundSelect.XRadius := FBackgroundButton.XRadius;
+  FBackgroundSelect.YRadius := FBackgroundButton.YRadius;
+  FBackgroundSelect.Visible := True;
+  FBackgroundSelect.Opacity := 0;
+
+  FText := TLabel.Create(Self);
+  Self.AddObject(FText);
+  FText.Align := TAlignLayout.Client;
+  FText.HitTest := False;
+  FText.Margins.Left := 20;
+  FText.Margins.Right := 20;
+  FText.StyledSettings := [];
+  FText.TextSettings.Font.Size := 14;
+  FText.TextSettings.Font.Family := 'SF Pro Display';
+  FText.TextSettings.FontColor := FContrastColor;
+  FText.TextSettings.HorzAlign := TTextAlign.Center;
+  FText.Font.Style := [TFontStyle.fsBold];
+  FText.Text := 'BUTTON';
+  FText.SetSubComponent(True);
+  FText.Stored := False;
+
+  FIcon := TPath.Create(Self);
+  FText.AddObject(FIcon);
+  FIcon.SetSubComponent(True);
+  FIcon.Stored := False;
+  FIcon.Align := TAlignLayout.Left;
+  FIcon.WrapMode := TPathWrapMode.Fit;
+  FIcon.Fill.Color := FContrastColor;
+  FIcon.Stroke.Kind := TBrushKind.None;
+  FIcon.Width := 13;
+  FIcon.HitTest := False;
+  FIcon.Visible := False;
+
+  FShadow := TShadowEffect.Create(Self);
+  Self.AddObject(FShadow);
+  FShadow.Direction := 90;
+  FShadow.Distance := 2;
+  FShadow.Opacity := 0.3;
+  FShadow.Softness := 0.15;
+  FShadow.Enabled := True;
+  FShadow.SetSubComponent(True);
+  FShadow.Stored := False;
+end;
+
+destructor TRectangleButton.Destroy;
+begin
+  if Assigned(FShadow) then
+    FShadow.Free;
+  if Assigned(FIcon) then
+    FIcon.Free;
+  if Assigned(FText) then
+    FText.Free;
+  if Assigned(FBackgroundSelect) then
+    FBackgroundSelect.Free;
+  if Assigned(FBackgroundButton) then
+    FBackgroundButton.Free;
+  inherited;
+end;
+
+function TRectangleButton.GetFBackgroudColor: TAlphaColor;
+begin
+  Result := FBackgroundButton.Fill.Color;
+end;
+
+function TRectangleButton.GetFButtonClass: TColorClass;
+begin
+  if FBackgroundButton.Fill.Color = PRIMARY_COLOR then
+    Result := TColorClass.Primary
+  else if FBackgroundButton.Fill.Color = SECONDARY_COLOR then
+    Result := TColorClass.Secondary
+  else if FBackgroundButton.Fill.Color = ERROR_COLOR then
+    Result := TColorClass.Error
+  else if FBackgroundButton.Fill.Color = WARNING_COLOR then
+    Result := TColorClass.Warning
+  else if FBackgroundButton.Fill.Color = SUCCESS_COLOR then
+    Result := TColorClass.Success
+  else if FBackgroundButton.Fill.Color = NORMAL_COLOR then
+    Result := TColorClass.Normal
+  else
+    Result := TColorClass.Custom;
+end;
+
+function TRectangleButton.GetFCursor: TCursor;
+begin
+  Result := FBackgroundButton.Cursor;
+end;
+
+function TRectangleButton.GetFDark: Boolean;
+begin
+  if FContrastColor = TAlphaColor($FF323232) then
+    Result := True
+  else
+    Result := False;
+end;
+
+function TRectangleButton.GetFElevation: Boolean;
+begin
+  Result := FShadow.Enabled;
+end;
+
+function TRectangleButton.GetFHitTest: Boolean;
+begin
+  Result := FBackgroundButton.HitTest;
+end;
+
+function TRectangleButton.GetFIconData: TPathData;
+begin
+  Result := FIcon.Data;
+end;
+
+function TRectangleButton.GetFIconPosition: TIconPosition;
+begin
+  if FIcon.Align = TAlignLayout.Left then
+    Result := TIconPosition.Left
+  else if FIcon.Align = TAlignLayout.Right then
+    Result := TIconPosition.Right;
+end;
+
+function TRectangleButton.GetFIconSize: Single;
+begin
+  Result := FIcon.Width;
+end;
+
+function TRectangleButton.GetFText: String;
+begin
+  Result := FText.Text;
+end;
+
+function TRectangleButton.GetFTextSettings: TTextSettings;
+begin
+  Result := FText.TextSettings;
+end;
+
+procedure TRectangleButton.Paint;
+begin
+  inherited;
+  if FIcon.Data.Data.Equals('') then
+  begin
+    FIcon.Visible := False;
+    FText.TextSettings.HorzAlign := TTextAlign.Center;
+  end
+  else
+  begin
+    FIcon.Visible := True;
+    SetFIconPosition(GetFIconPosition);
+  end;
+
+  FText.TextSettings.FontColor := FContrastColor;
+  FIcon.Fill.Color := FContrastColor;
+end;
+
+procedure TRectangleButton.Painting;
+begin
+  inherited;
+
+end;
+
+procedure TRectangleButton.Resize;
+begin
+  inherited;
+
+end;
+
+procedure TRectangleButton.SetFBackgroudColor(const Value: TAlphaColor);
+begin
+  FBackgroundButton.Fill.Color := Value;
+end;
+
+procedure TRectangleButton.SetFButtonClass(const Value: TColorClass);
+begin
+  if Value = TColorClass.Primary then
+  begin
+    FBackgroundButton.Fill.Color := PRIMARY_COLOR;
+    SetFDark(False);
+  end
+  else if Value = TColorClass.Secondary then
+  begin
+    FBackgroundButton.Fill.Color := SECONDARY_COLOR;
+    SetFDark(False);
+  end
+  else if Value = TColorClass.Error then
+  begin
+    FBackgroundButton.Fill.Color := ERROR_COLOR;
+    SetFDark(False);
+  end
+  else if Value = TColorClass.Warning then
+  begin
+    FBackgroundButton.Fill.Color := WARNING_COLOR;
+    SetFDark(False);
+  end
+  else if Value = TColorClass.Normal then
+  begin
+    FBackgroundButton.Fill.Color := NORMAL_COLOR;
+    SetFDark(True);
+  end
+  else if Value = TColorClass.Success then
+  begin
+    FBackgroundButton.Fill.Color := SUCCESS_COLOR;
+    SetFDark(False);
+  end
+  else
+  begin
+    FBackgroundButton.Fill.Color := TAlphaColor($FF323232);
+    SetFDark(False);
+  end;
+end;
+
+procedure TRectangleButton.SetFCursor(const Value: TCursor);
+begin
+  FBackgroundButton.Cursor := Value;
+end;
+
+procedure TRectangleButton.SetFDark(const Value: Boolean);
+begin
+  if Value then
+    FContrastColor := TAlphaColor($FF323232)
+  else
+    FContrastColor := TAlphaColor($FFFFFFFF);
+end;
+
+procedure TRectangleButton.SetFElevation(const Value: Boolean);
+begin
+  FShadow.Enabled := Value;
+end;
+
+procedure TRectangleButton.SetFHitTest(const Value: Boolean);
+begin
+  FBackgroundButton.HitTest := Value;
+end;
+
+procedure TRectangleButton.SetFIconData(const Value: TPathData);
+begin
+  FIcon.Data := Value;
+end;
+
+procedure TRectangleButton.SetFIconPosition(const Value: TIconPosition);
+begin
+  if Value = TIconPosition.Left then
+  begin
+    FIcon.Align := TAlignLayout.Left;
+    FText.TextSettings.HorzAlign := TTextAlign.Trailing;
+  end
+  else if Value = TIconPosition.Right then
+  begin
+    FIcon.Align := TAlignLayout.Right;
+    FText.TextSettings.HorzAlign := TTextAlign.Leading;
+  end;
+end;
+
+procedure TRectangleButton.SetFIconSize(const Value: Single);
+begin
+  FIcon.Width := Value;
+end;
+
+procedure TRectangleButton.SetFText(const Value: String);
+begin
+  FText.Text := Value;
+end;
+
+procedure TRectangleButton.SetFTextSettings(const Value: TTextSettings);
+begin
+  FText.TextSettings := Value;
+end;
+
+end.

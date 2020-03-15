@@ -14,8 +14,12 @@ type
   TTransparentComboBox = class(TControl)
   private
     { Private declarations }
+    FRecalcCardChoices: Boolean;
   protected
     { Protected declarations }
+    FPointerOnClosePopup: TNotifyEvent;
+    FPointerOnChangePopup: TNotifyEvent;
+
     FTransparentInput: TTransparentInput;
     FLayoutClick: TLayout;
     FCardChoices: TCard;
@@ -51,11 +55,38 @@ type
     procedure SetFComboBoxBackgroudColor(const Value: TBrush);
     function GetFCursor: TCursor;
     procedure SetFCursor(const Value: TCursor);
+    function GetFTextPrompt: String;
+    procedure SetFTextPrompt(const Value: String);
+    function GetFOnClick: TNotifyEvent;
+    function GetFOnDblClick: TNotifyEvent;
+    function GetFOnEnter: TNotifyEvent;
+    function GetFOnExit: TNotifyEvent;
+    function GetFOnMouseDown: TMouseEvent;
+    function GetFOnMouseEnter: TNotifyEvent;
+    function GetFOnMouseLeave: TNotifyEvent;
+    function GetFOnMouseMove: TMouseMoveEvent;
+    function GetFOnMouseUp: TMouseEvent;
+    function GetFOnMouseWheel: TNotifyEvent;
+    procedure SetFOnClick(const Value: TNotifyEvent);
+    procedure SetFOnDblClick(const Value: TNotifyEvent);
+    procedure SetFOnEnter(const Value: TNotifyEvent);
+    procedure SetFOnExit(const Value: TNotifyEvent);
+    procedure SetFOnMouseDown(const Value: TMouseEvent);
+    procedure SetFOnMouseEnter(const Value: TNotifyEvent);
+    procedure SetFOnMouseLeave(const Value: TNotifyEvent);
+    procedure SetFOnMouseMove(const Value: TMouseMoveEvent);
+    procedure SetFOnMouseUp(const Value: TMouseEvent);
+    procedure SetFOnMouseWheel(const Value: TNotifyEvent);
+    function GetFCardChoicesHeight: Single;
+    procedure SetFCardChoicesHeight(const Value: Single);
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure InitializeComboBox();
+    function Text(): String;
+    function Select(ItemString: String = ''): String; overload;
+    function Select(ItemIndex: Integer = -1): Integer; overload;
     procedure ValidateText();
   published
     { Published declarations }
@@ -81,13 +112,28 @@ type
     property ComboBoxSelectedColor: TAlphaColor read GetFComboBoxSelectedColor write SetFComboBoxSelectedColor;
     property ComboBoxBackgroudColor: TBrush read GetFComboBoxBackgroudColor write SetFComboBoxBackgroudColor;
     property TextSettings: TTextSettings read GetFTextSettings write SetFTextSettings;
+    property TextPrompt: String read GetFTextPrompt write SetFTextPrompt;
+    property CardChoicesHeight: Single read GetFCardChoicesHeight write SetFCardChoicesHeight;
 
     { Events }
     property OnPainting;
     property OnPaint;
     property OnResize;
-  end;
 
+    { Mouse events }
+    property OnClick: TNotifyEvent read GetFOnClick write SetFOnClick;
+    property OnDblClick: TNotifyEvent read GetFOnDblClick write SetFOnDblClick;
+    property OnMouseDown: TMouseEvent read GetFOnMouseDown write SetFOnMouseDown;
+    property OnMouseUp: TMouseEvent read GetFOnMouseUp write SetFOnMouseUp;
+    property OnMouseWheel: TNotifyEvent read GetFOnMouseWheel write SetFOnMouseWheel;
+    property OnMouseMove: TMouseMoveEvent read GetFOnMouseMove write SetFOnMouseMove;
+    property OnMouseEnter: TNotifyEvent read GetFOnMouseEnter write SetFOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read GetFOnMouseLeave write SetFOnMouseLeave;
+    property OnEnter: TNotifyEvent read GetFOnEnter write SetFOnEnter;
+    property OnExit: TNotifyEvent read GetFOnExit write SetFOnExit;
+    property OnClosePopup: TNotifyEvent read FPointerOnClosePopup write FPointerOnClosePopup;
+    property OnChange: TNotifyEvent read FPointerOnChangePopup write FPointerOnChangePopup;
+  end;
 
 procedure Register;
 
@@ -104,7 +150,8 @@ constructor TTransparentComboBox.Create(AOwner: TComponent);
 begin
   inherited;
   Self.Width := 400;
-  Self.Height := 200;
+  Self.Height := 40;
+  Self.HitTest := False;
 
   if not Assigned(FItems) then
     FItems := TStringList.Create;
@@ -116,7 +163,7 @@ begin
   { SolidAppleEdit }
   FTransparentInput := TTransparentInput.Create(Self);
   Self.AddObject(FTransparentInput);
-  FTransparentInput.Align := TAlignLayout.Top;
+  FTransparentInput.Align := TAlignLayout.Contents;
   FTransparentInput.SetSubComponent(True);
   FTransparentInput.Stored := False;
   FTransparentInput.IconData.Data := 'M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z';
@@ -128,7 +175,7 @@ begin
   { LayoutClick }
   FLayoutClick := TLayout.Create(Self);
   FTransparentInput.AddObject(FLayoutClick);
-  FLayoutClick.Align := TAlignLayout.Client;
+  FLayoutClick.Align := TAlignLayout.Contents;
   FLayoutClick.SetSubComponent(True);
   FLayoutClick.Stored := False;
   FLayoutClick.HitTest := True;
@@ -138,13 +185,14 @@ begin
   { CardChoices }
   FCardChoices := TCard.Create(Self);
   Self.AddObject(FCardChoices);
-  FCardChoices.Align := TAlignLayout.Client;
+  FCardChoices.Align := TAlignLayout.Top;
   FCardChoices.SetSubComponent(True);
   FCardChoices.Stored := False;
   FCardChoices.CornerRound := 5;
   FCardChoices.ElevationOpacity := 0.1;
   FCardChoices.ElevationDistance := 7;
   FCardChoices.Visible := False;
+  FCardChoices.HitTest := False;
 
   { ScrollChoices }
   FScrollChoices := TVertScrollBox.Create(Self);
@@ -172,6 +220,11 @@ end;
 procedure TTransparentComboBox.Paint;
 begin
   inherited;
+  if not FRecalcCardChoices then
+  begin
+    SetFComboBoxAlign(GetFComboBoxAlign);
+    FRecalcCardChoices := True;
+  end;
   InitializeComboBox();
   ItemSelect(GetFItemIndex);
 end;
@@ -255,6 +308,7 @@ begin
   begin
     InitializeComboBox();
     ItemSelect(GetFItemIndex);
+    FCardChoices.HitTest := True;
     FCardChoices.Open(0.1);
   end
   else
@@ -264,13 +318,20 @@ end;
 procedure TTransparentComboBox.OnComboBoxExit(Sender: TObject);
 begin
   if FCardChoices.Visible then
+  begin
     FCardChoices.Close(0.1);
+    FCardChoices.HitTest := False;
+  end;
+  if Assigned(FPointerOnClosePopup) then
+    FPointerOnClosePopup(Sender);
 end;
 
 procedure TTransparentComboBox.OnItemComboBoxClick(Sender: TObject);
 begin
   ItemSelect(TRectangle(Sender).Tag);
   ShowItemSelect(Sender);
+  if Assigned(FPointerOnChangePopup) then
+    FPointerOnChangePopup(Self);
   OnComboBoxExit(Sender);
 end;
 
@@ -330,6 +391,14 @@ begin
   FLabelItemSelect.Text := FItems[TRectangle(Sender).Tag];
 end;
 
+function TTransparentComboBox.Text: String;
+begin
+  if (Self.ItemIndex > -1) and (FItems.Count > Self.ItemIndex) then
+    Result := FItems[Self.ItemIndex]
+  else
+    Result := '';
+end;
+
 procedure TTransparentComboBox.ValidateText;
 begin
   FTransparentInput.ValidateText();
@@ -340,6 +409,56 @@ begin
   Result := FItems;
 end;
 
+function TTransparentComboBox.GetFOnClick: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnClick;
+end;
+
+function TTransparentComboBox.GetFOnDblClick: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnDblClick;
+end;
+
+function TTransparentComboBox.GetFOnEnter: TNotifyEvent;
+begin
+  Result := FTransparentInput.OnEnter;
+end;
+
+function TTransparentComboBox.GetFOnExit: TNotifyEvent;
+begin
+  Result := FTransparentInput.OnExit;
+end;
+
+function TTransparentComboBox.GetFOnMouseDown: TMouseEvent;
+begin
+  Result := FLayoutClick.OnMouseDown;
+end;
+
+function TTransparentComboBox.GetFOnMouseEnter: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnMouseEnter;
+end;
+
+function TTransparentComboBox.GetFOnMouseLeave: TNotifyEvent;
+begin
+  Result := FLayoutClick.OnMouseLeave;
+end;
+
+function TTransparentComboBox.GetFOnMouseMove: TMouseMoveEvent;
+begin
+  Result := FLayoutClick.OnMouseMove;
+end;
+
+function TTransparentComboBox.GetFOnMouseUp: TMouseEvent;
+begin
+  Result := FLayoutClick.OnMouseUp;
+end;
+
+function TTransparentComboBox.GetFOnMouseWheel: TNotifyEvent;
+begin
+  Result := FScrollChoices.OnVScrollChange;
+end;
+
 procedure TTransparentComboBox.SetFItems(const Value: TStringList);
 begin
   SetFItemIndex(-1);
@@ -347,6 +466,56 @@ begin
   FItems.AddStrings(Value);
   FItemsChanged := True;
   FItemsCount := 0;
+end;
+
+procedure TTransparentComboBox.SetFOnClick(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnClick := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnDblClick(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnDblClick := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnEnter(const Value: TNotifyEvent);
+begin
+  FTransparentInput.OnEnter := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnExit(const Value: TNotifyEvent);
+begin
+  FTransparentInput.OnExit := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseDown(const Value: TMouseEvent);
+begin
+  FLayoutClick.OnMouseDown := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseEnter(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnMouseEnter := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseLeave(const Value: TNotifyEvent);
+begin
+  FLayoutClick.OnMouseLeave := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseMove(const Value: TMouseMoveEvent);
+begin
+  FLayoutClick.OnMouseMove := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseUp(const Value: TMouseEvent);
+begin
+  FLayoutClick.OnMouseUp := Value;
+end;
+
+procedure TTransparentComboBox.SetFOnMouseWheel(const Value: TNotifyEvent);
+begin
+  FScrollChoices.OnVScrollChange := Value;
 end;
 
 procedure TTransparentComboBox.SetFComboBoxSelectedColor(const Value: TAlphaColor);
@@ -369,9 +538,19 @@ begin
   Result := FLayoutClick.Cursor;
 end;
 
+function TTransparentComboBox.GetFTextPrompt: String;
+begin
+  Result := FTransparentInput.TextPrompt;
+end;
+
 function TTransparentComboBox.GetFTextSettings: TTextSettings;
 begin
   Result := FTransparentInput.TextSettings;
+end;
+
+procedure TTransparentComboBox.SetFTextPrompt(const Value: String);
+begin
+  FTransparentInput.TextPrompt := Value;
 end;
 
 procedure TTransparentComboBox.SetFTextSettings(const Value: TTextSettings);
@@ -390,12 +569,17 @@ begin
     FItemIndex := Value;
 end;
 
+function TTransparentComboBox.GetFCardChoicesHeight: Single;
+begin
+  Result := FCardChoices.Height;
+end;
+
 function TTransparentComboBox.GetFComboBoxAlign: TComboBoxAlign;
 begin
   Result := TComboBoxAlign.Top;
-  if FTransparentInput.Align = TAlignLayout.Top then
+  if FCardChoices.Align = TAlignLayout.Bottom then
     Result := TComboBoxAlign.Top
-  else if FTransparentInput.Align = TAlignLayout.Bottom then
+  else if FCardChoices.Align = TAlignLayout.Top then
     Result := TComboBoxAlign.Bottom;
 end;
 
@@ -407,20 +591,46 @@ end;
 procedure TTransparentComboBox.SetFComboBoxBackgroudColor(const Value: TBrush);
 begin
   FTransparentInput.BackgroudColor := Value;
+  FCardChoices.Color := Value;
+end;
+
+function TTransparentComboBox.Select(ItemString: String = ''): String;
+begin
+  Result := '';
+  if not ItemString.Equals('') then
+    Self.ItemIndex := FItems.IndexOf(ItemString);
+  if (Self.ItemIndex > -1) and (FItems.Count > Self.ItemIndex) then
+    Result := FItems[Self.ItemIndex];
+  ItemSelect(ItemIndex);
+end;
+
+function TTransparentComboBox.Select(ItemIndex: Integer = -1): Integer;
+begin
+  if ItemIndex <> -1 then
+    Self.ItemIndex := ItemIndex;
+  Result := Self.ItemIndex;
+  ItemSelect(ItemIndex);
+end;
+
+procedure TTransparentComboBox.SetFCardChoicesHeight(const Value: Single);
+begin
+  FCardChoices.Height := Value;
 end;
 
 procedure TTransparentComboBox.SetFComboBoxAlign(const Value: TComboBoxAlign);
 begin
   if Value = TComboBoxAlign.Top then
   begin
-    FTransparentInput.Align := TAlignLayout.Top;
-    FTransparentInput.IconData.Data := 'M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z';
+    FCardChoices.Align := TAlignLayout.Bottom;
+    FCardChoices.Margins.Bottom := FTransparentInput.Height;
+    FTransparentInput.IconData.Data := 'M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z';
     FCardChoices.ElevationDistance := 7;
   end
   else if Value = TComboBoxAlign.Bottom then
   begin
-    FTransparentInput.Align := TAlignLayout.Bottom;
-    FTransparentInput.IconData.Data := 'M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z';
+    FCardChoices.Align := TAlignLayout.Top;
+    FCardChoices.Margins.Top := FTransparentInput.Height;
+    FTransparentInput.IconData.Data := 'M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z';
     FCardChoices.ElevationDistance := 0;
   end;
 end;

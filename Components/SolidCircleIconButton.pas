@@ -93,7 +93,7 @@ begin
     FShadow.AnimateFloat('Softness', 0.3, 0.2, TAnimationType.InOut);
   end;
 
-  FBackgroundSelect.AnimateFloat('Opacity', 0.1, 0.1, TAnimationType.InOut);
+  FBackgroundSelect.AnimateFloat('Opacity', 0.1, 0.2, TAnimationType.InOut);
 
   if Assigned(FPointerOnMouseEnter) then
     FPointerOnMouseEnter(Sender);
@@ -107,7 +107,7 @@ begin
     FShadow.AnimateFloat('Softness', 0.15, 0.2, TAnimationType.InOut);
   end;
 
-  FBackgroundSelect.AnimateFloat('Opacity', 0, 0.1, TAnimationType.InOut);
+  FBackgroundSelect.AnimateFloat('Opacity', 0, 0.2, TAnimationType.InOut);
 
   if Assigned(FPointerOnMouseExit) then
     FPointerOnMouseExit(Sender);
